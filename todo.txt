@@ -1,13 +1,14 @@
-git init
-
-
-multi =>
-brace et ... avec switch
-
+Pouvoir écrire ce que l'on veut (billes)
 analyse de l'égalité avec ?
 champ d'entrée
 
 inégalités ?
 
+
+
 fraction / LaTeX
 dl eps/pdf
+
+favicon
+color
+strokewidth
