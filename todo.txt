@@ -1,9 +1,9 @@
 Pouvoir écrire ce que l'on veut (billes)
 analyse de l'égalité avec ?
-champ d'entrée
 
 inégalités ?
 
+// ZERO in multirod
 
 
 fraction / LaTeX
@@ -12,3 +12,39 @@ dl eps/pdf
 favicon
 color
 strokewidth
+
+
+Notes :
+https://github.com/paperjs/paper.js/issues/1832
+
+
+ // 1 + 2 + 3 + 5 = 11
+
+    // new Rod(0, 1, 11, 1, false, true, paperWidth)
+    // new Rod(1, 1.5, 11, 1, false, true, paperWidth)
+    // new Rod(2.5, 6, 11, 1, false, true, paperWidth)
+    // new Rod(8.5, 2.5, 11, 1, false, true, paperWidth)
+
+    // new Rod(0, 11, 11, 0, true, true, paperWidth)
+
+    // new Brace(2.5, 2, 3, 11, 2, false, true, paperWidth)
+
+
+    // new Rod(0, 14, 14, 4, false, true, paperWidth)
+    // new Rod(0, 3, 14, 5, false, true, paperWidth)
+    // new Rod(3, 3, 14, 5, false, true, paperWidth)
+    // new Rod(6, 3, 14, 5, false, true, paperWidth)
+    // new Rod(9, 3, 14, 5, false, true, paperWidth)
+    // new Rod(12, 2, 14, 5, false, true, paperWidth)
+    // new Brace(0, 3, 4, 14, 6, false, true, paperWidth)
+
+    // new Rod(0, 1, 2, 8, false, true, paperWidth)
+    // new Rod(0, 1/3, 1, 9, false, true, paperWidth)
+    // new Rod(1/3, 1/3, 1, 9, false, true, paperWidth)
+    // new Rod(2/3, 1/3, 1, 9, false, true, paperWidth)
+
+    //new Rod(0, formula, formula, 0, false, true, paperWidth)
+    //new MultiQuotition(0, 3, 4, 12, 1, paperWidth)
+
+    //new Rod(0, sum, sum, 4, false, true, paperWidth)
+    //new MultiPartition(0, 3, 4, sum, 5, true, paperWidth)

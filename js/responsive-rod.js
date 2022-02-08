@@ -1,49 +1,98 @@
 // when view is resized...
 paper.view.onResize = function() {
-    project.clear()
-    drawApp(paper.view.bounds.width)
+    drawApp(paper.view.bounds.width, formulaInput.value)
 };
+
+/* utils */
+var reducer = function(previousValue, currentValue) { return previousValue + currentValue }
 
 /* scene */
 var textPosition = 27
 var rodHeight = 40
 var rodMarginTop = 100
 
-function drawApp(paperWidth) {
+/* formula input */
+var divFormInline = document.createElement('div')
+divFormInline.className = 'form-inline'
 
-    // 1 + 2 + 3 + 5 = 11
+var formulaInput = document.createElement('input');
+formulaInput.setAttribute('type', 'text');
+formulaInput.className = 'form-input'
+formulaInput.size = 37
+formulaInput.value = '1+2+3+4=10=5+5'
 
-    // new Rod(0, 1, 11, 1, false, true, paperWidth)
-    // new Rod(1, 1.5, 11, 1, false, true, paperWidth)
-    // new Rod(2.5, 6, 11, 1, false, true, paperWidth)
-    // new Rod(8.5, 2.5, 11, 1, false, true, paperWidth)
+divFormInline.appendChild(formulaInput)
 
-    // new Rod(0, 11, 11, 0, true, true, paperWidth)
+var divFormSwitch = document.createElement('div')
+divFormSwitch.className = 'form-switch form-check-inline'
 
-    // new Brace(2.5, 2, 3, 11, 2, false, true, paperWidth)
+var checkInput = document.createElement('input')
+checkInput.setAttribute('type', 'checkbox')
+checkInput.className = 'form-check-input'
 
+var labelCheckbox = document.createElement('label')
+labelCheckbox.className = 'form-check-label'
+labelCheckbox.innerText = 'Cacher / Montrer'
 
-    // new Rod(0, 14, 14, 4, false, true, paperWidth)
-    // new Rod(0, 3, 14, 5, false, true, paperWidth)
-    // new Rod(3, 3, 14, 5, false, true, paperWidth)
-    // new Rod(6, 3, 14, 5, false, true, paperWidth)
-    // new Rod(9, 3, 14, 5, false, true, paperWidth)
-    // new Rod(12, 2, 14, 5, false, true, paperWidth)
-    // new Brace(0, 3, 4, 14, 6, false, true, paperWidth)
+divFormSwitch.append(checkInput, labelCheckbox)
 
-    // new Rod(0, 1, 2, 8, false, true, paperWidth)
-    // new Rod(0, 1/3, 1, 9, false, true, paperWidth)
-    // new Rod(1/3, 1/3, 1, 9, false, true, paperWidth)
-    // new Rod(2/3, 1/3, 1, 9, false, true, paperWidth)
+var div = document.createElement('div')
+div.className = 'd-flex justify-content-center'
+div.style = 'margin-top: 30px'
 
+div.append(divFormInline, divFormSwitch)
 
-    // shift, value, factor, sum, line, isValueHidden, paperWidth
+document.body.insertBefore(div, document.body.firstChild);
 
-    new Rod(0, 12, 12, 0, false, true, paperWidth)
-    new MultiQuotition(0, 3, 4, 12, 1, paperWidth)
+formulaInput.addEventListener('keyup', function(event) {
+    if(event.key != 'Shift') {
+        drawApp(paper.view.bounds.width, formulaInput.value)
+    }
+})  
+checkInput.addEventListener('change', function() {
+    if (formulaInput.type === "password") {
+        formulaInput.type = "text";
+    } else {
+        formulaInput.type = "password";
+    }
+})  
 
-    new Rod(0, 12, 12, 4, false, true, paperWidth)
-    new MultiPartition(0, 3, 4, 12, 5, true, paperWidth)
+function keyup(event) { window.dispatchEvent(new Event('keyup')); }
+function change(event) { window.dispatchEvent(new Event('change')); }
+
+function drawApp(paperWidth, formula) {
+
+    project.clear()
+
+    var formulaSplitEqual = formula.split('=')
+    var lines = formulaSplitEqual.map(function(item) { return item.replace(/[a-zA-Z\s\?]*/g, "") }) 
+
+    var sumList = []
+    var modelLines = []
+    var modelMax
+    for(var index in lines) {
+        var line = lines[index].split('+').map(function(item) { return parseFloat(item) })
+        modelLines.push(line)
+        var lineSum = line.reduce(reducer)
+        sumList.push(lineSum)
+    }
+    modelMax = Math.max.apply(Math, sumList)
+
+    var modelLinesIsValueHidden = []
+    for(var index in formulaSplitEqual) {
+        var line = formulaSplitEqual[index].split('+').map(function(item) { 
+            return item.indexOf("?") > -1 })
+        modelLinesIsValueHidden.push(line)
+    }
+
+    for(var i in modelLines) {
+        var shift = 0
+        for(var j in modelLines[i]) {
+            //shift, value, sum, line, isValueHidden, isSwitchON, paperWidth
+            new Rod(shift, modelLines[i][j], modelMax, i, modelLinesIsValueHidden[i][j], true, paperWidth)
+            shift += modelLines[i][j]
+        }
+    }
 
 }
 /* ########### Rod ###############
@@ -58,54 +107,58 @@ var Rod = Base.extend({
 
     initialize: function(shift, value, sum, line, isValueHidden, isSwitchON, paperWidth) {
 
-        this.rodGroup = new Group();
-        this.isValueHidden = isValueHidden
-        var rodLength = paperWidth/2
+        if(value) {
+            this.rodGroup = new Group();
+            this.isValueHidden = isValueHidden
+            var rodLength = paperWidth/2
+        
+            var rectangle = new Rectangle(new Point(paperWidth/4 + shift*rodLength/sum, rodMarginTop + line*rodHeight), new Size(value*rodLength/sum, rodHeight));
+            this.path = new Path.Rectangle(rectangle);
+            this.path.fillColor = '#FFFFFF'
+            this.path.strokeColor = '#0';
+            this.path.strokeWidth = 2
+            this.path.selected = false;
+            this.text = new PointText(new Point(paperWidth/4 + 0.5*value*rodLength/sum + shift*rodLength/sum, rodMarginTop + textPosition + line*rodHeight));
+            this.text.justification = 'center';
+            this.text.fillColor = 'black';
+            this.text.fontSize = 20
+            this.text.content = value.toString();
+            if (isValueHidden) {
+                this.text.content = '?'
+            }
     
-        var rectangle = new Rectangle(new Point(paperWidth/4 + shift*rodLength/sum, rodMarginTop + line*rodHeight), new Size(value*rodLength/sum, rodHeight));
-        this.path = new Path.Rectangle(rectangle);
-        this.path.fillColor = '#FFFFFF'
-        this.path.strokeColor = '#0';
-        this.path.strokeWidth = 2
-        this.path.selected = false;
-        this.text = new PointText(new Point(paperWidth/4 + 0.5*value*rodLength/sum + shift*rodLength/sum, rodMarginTop + textPosition + line*rodHeight));
-        this.text.justification = 'center';
-        this.text.fillColor = 'black';
-        this.text.fontSize = 20
-        this.text.content = value.toString();
-        if (isValueHidden) {
-            this.text.content = '?'
-        }
-
-        this.rodGroup.addChild(this.path)
-        this.rodGroup.addChild(this.text)
-
-
-        if(isSwitchON) {
-
-            var that = this
-
-            this.rodGroup.onMouseDown = function() {
-
-                if(that.isValueHidden) {
-                    that.isValueHidden = false
-                    that.text.content = value.toString();
-                } else {
-                    that.isValueHidden = true
-                    that.text.content = '?'
+            this.rodGroup.addChild(this.path)
+            this.rodGroup.addChild(this.text)
+    
+    
+            if(isSwitchON) {
+    
+                var that = this
+    
+                this.rodGroup.onMouseDown = function() {
+    
+                    if(that.isValueHidden) {
+                        that.isValueHidden = false
+                        that.text.content = value.toString();
+                    } else {
+                        that.isValueHidden = true
+                        that.text.content = '?'
+                    }
                 }
+        
+                this.rodGroup.onMouseEnter = function() {
+                    view.element.style.setProperty('cursor', 'pointer');
+                },
+                this.rodGroup.onMouseLeave = function() {
+                    view.element.style.setProperty('cursor', null);
+                }
+    
             }
     
-            this.rodGroup.onMouseEnter = function() {
-                view.element.style.setProperty('cursor', 'pointer');
-            },
-            this.rodGroup.onMouseLeave = function() {
-                view.element.style.setProperty('cursor', null);
-            }
-
+            return this.rodGroup
+        } else {
+            return null
         }
-
-        return this.rodGroup
 }})
 
 /* ########### Brace ###############
@@ -174,7 +227,6 @@ var Brace = Base.extend({
         }
 
         this.brace.switch = function() {
-            console.log(factor)
             if (that.isValueHidden) {
                 that.isValueHidden = false
                 that.text.content = factor.toString() + ' x';

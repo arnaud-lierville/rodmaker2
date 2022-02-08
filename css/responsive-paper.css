@@ -10,3 +10,17 @@ canvas[resize] {
     width: 100%;
     height: auto;
 }
+
+.form-switch .form-check-input {
+    width: 4em;
+    height: 2em;
+}
+
+label {
+    margin: 7px;
+}
+
+.form-input {
+    margin-top: 6px;
+    margin-right: 20px;
+}
