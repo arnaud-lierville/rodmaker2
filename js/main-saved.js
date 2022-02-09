@@ -10,13 +10,13 @@ function numberFormatting(value) { return value.toString().replace('.', ',') }
 function stringToFloat(string) { return parseFloat(string.replace(',', '.')) }
 var deepEval = function(value) { try { return math.evaluate(value) } catch (e) { return 42 } }
 
-var latexToImg = function(formula) {
-    var wrapper = MathJax.tex2svg(formula, { em: 10, ex: 5, display: true })
-    return wrapper.querySelector('svg');
-}
+// var latexToImg = function(formula) {
+//     var wrapper = MathJax.tex2svg(formula, { em: 10, ex: 5, display: true })
+//     return wrapper.querySelector('svg');
+// }
 
 /* scene */
-var rodHeight = 40
+var rodHeight = 80
 var textPosition = 27*rodHeight/40
 var rodMarginTop = 100
 var fontSize = rodHeight/2
@@ -29,7 +29,7 @@ var formulaInput = document.createElement('input');
 formulaInput.setAttribute('type', 'text');
 formulaInput.className = 'form-input'
 formulaInput.size = 37
-formulaInput.value = '?5*2=10=3.3+6,7=7+?3=5*2?'//'15=3?*5'//
+formulaInput.value = '10=7+3'//'15=3?*5'
 
 divFormInline.appendChild(formulaInput)
 
@@ -79,13 +79,12 @@ function drawApp(paperWidth, formula) {
 
     var sumList = []
     var modelLines = []
-    var modelMax = 0
+    var modelMax
     var nbModelLine = lines.length
 
-    /* modelMax calculating */
     for(var index in lines) {
 
-        if(!isNaN(parseInt(lines[index]))) {
+        if(parseInt(lines[index]) != NaN) {
 
             var line = lines[index].split('+')
             modelLines.push(line)
@@ -94,15 +93,14 @@ function drawApp(paperWidth, formula) {
             for(var rod in line) {
                 if(line[rod].indexOf('*') > -1) {
                     var productSplited = line[rod].split('*')
-                    var factor = parseFloat(productSplited[0])
-                    var value = parseFloat(productSplited[1])
-                    if(!isNaN(factor) && !isNaN(value)) {
-                        tempSum.push(factor*value)
+                    var factor = deepEval(productSplited[0])//stringToFloat(productSplited[0])
+                    var value = deepEval(productSplited[1])//stringToFloat(productSplited[1])
+                    if(factor && value) {
+                        tempSum.push(factor*value)// parseFloat(productSplited[0])*parseFloat(productSplited[1]))
                     }
                 } else {
-                    if(!isNaN(parseFloat(line[rod]))) {// line[rod] != '') {
-                        tempSum.push(parseFloat(line[rod]))
-                    }
+                    console.log('line[rod]', line[rod])
+                    tempSum.push(deepEval(line[rod]))//stringToFloat(line[rod]))
                 }
             }
             var lineSum = tempSum.reduce(reducer)
@@ -110,11 +108,12 @@ function drawApp(paperWidth, formula) {
         }
     }
     modelMax = Math.max.apply(Math, sumList)
-    console.log('modelMax', modelMax)
+
+    console.log(modelMax)
 
     var modelLinesIsValueHidden = []
     for(var index in formulaSplitEqual) {
-        var line = formulaSplitEqual[index].split('+').map(function(item) { return item.replace(/[0-9a-zA-Z\s.,]*/g, '') })
+        var line = formulaSplitEqual[index].split('+').map(function(item) { return item.replace(/[0-9.,a-zA-Z\s]*/g, '') })
         modelLinesIsValueHidden.push(line)
     }
 
@@ -123,17 +122,17 @@ function drawApp(paperWidth, formula) {
         for(var j in modelLines[i]) {
             if(modelLinesIsValueHidden[i][j] == '*?') {
                 var productSplited = modelLines[i][j].split('*')
-                    var factor = parseFloat(productSplited[0])
-                    var value = parseFloat(productSplited[1])
-                if(!isNaN(factor) && !isNaN(value)) {
+                    var factor = deepEval(productSplited[0])//stringToFloat(productSplited[0])
+                    var value = deepEval(productSplited[1])//stringToFloat(productSplited[1])
+                if(factor && value) {
                     new MultiPartition(shift, value, factor, modelMax, parseInt(i), true, paperWidth)
                     shift += factor*value
                 }
             } else if(modelLinesIsValueHidden[i][j] == '*' || modelLinesIsValueHidden[i][j] == '?*?') {
                 var productSplited = modelLines[i][j].split('*')
-                    var factor = parseFloat(productSplited[0])
-                    var value = parseFloat(productSplited[1])
-                    if(!isNaN(factor) && !isNaN(value) && modelMax) {
+                    var factor = deepEval(productSplited[0])//stringToFloat(productSplited[0])
+                    var value = deepEval(productSplited[1])//stringToFloat(productSplited[1])
+                if(factor && value && modelMax) {
                     new MultiPartition(shift, value, factor, modelMax, parseInt(i), false, paperWidth)
                     shift += factor*value
                 }
@@ -146,18 +145,18 @@ function drawApp(paperWidth, formula) {
                 if (isLastLine) { type = 'bottom' }
 
                 var productSplited = modelLines[i][j].split('*')
-                var factor = parseFloat(productSplited[0])
-                var value = parseFloat(productSplited[1])
-                if(!isNaN(factor) && !isNaN(value) && modelMax) {
+                var factor = deepEval(productSplited[0])//stringToFloat(productSplited[0])
+                var value = deepEval(productSplited[1])//stringToFloat(productSplited[1])
+                if(factor && value && modelMax) {
                     new MultiQuotition(shift, value, factor, modelMax, parseInt(i), type, paperWidth)
                     shift += factor*value
                 }
             } else if(modelLinesIsValueHidden[i][j] == '?') {
-                new Rod(shift, parseFloat(modelLines[i][j]), modelMax, parseInt(i), true, true, paperWidth)
-                shift += parseFloat(modelLines[i][j])
+                new Rod(shift, deepEval(modelLines[i][j]), modelMax, parseInt(i), true, true, paperWidth)//stringToFloat(modelLines[i][j]), modelMax, parseInt(i), true, true, paperWidth)
+                shift += deepEval(modelLines[i][j])//stringToFloat(modelLines[i][j])
             }  else {
-                new Rod(shift, parseFloat(modelLines[i][j]), modelMax, parseInt(i), false, true, paperWidth)
-                shift += parseFloat(modelLines[i][j])
+                new Rod(shift, deepEval(modelLines[i][j]), modelMax, parseInt(i), false, true, paperWidth)//stringToFloat(modelLines[i][j]), modelMax, parseInt(i), false, true, paperWidth)
+                shift += deepEval(modelLines[i][j])//stringToFloat(modelLines[i][j])
             }  
         }
     }
@@ -174,7 +173,9 @@ var Rod = Base.extend({
 
     initialize: function(shift, value, sum, line, isValueHidden, isSwitchON, paperWidth) {
 
-        if(!isNaN(value) && value != undefined && value != 0) {
+        console.log('rod', value)
+
+        if(value != NaN && value != undefined) {
             this.rodGroup = new Group();
             this.isValueHidden = isValueHidden
             var rodLength = paperWidth/2
@@ -190,7 +191,9 @@ var Rod = Base.extend({
             this.text.fillColor = 'black';
             this.text.fontSize = fontSize
             this.text.content = numberFormatting(value)
-            if (isValueHidden) { this.text.content = '?' }
+            if (isValueHidden) {
+                this.text.content = '?'
+            }
 
             // this.text.visible = false
             // var svgGroup = paper.project.importSVG(latexToImg('\\dfrac{1}{6}'));
@@ -205,11 +208,8 @@ var Rod = Base.extend({
             // //svgGroup.position.y = -bounds.y+10;
             // svgGroup.position.y = rodMarginTop + 40 + line*rodHeight
     
-            this.rodGroup.addChild(this.path)
-            this.rodGroup.addChild(this.text)
-    
-            this.rodGroup.addChild(this.path)
-            this.rodGroup.addChild(this.text)
+            // this.rodGroup.addChild(this.path)
+            // this.rodGroup.addChild(this.text)
     
     
             if(isSwitchON) {
@@ -227,12 +227,19 @@ var Rod = Base.extend({
                     }
                 }
         
-                this.rodGroup.onMouseEnter = function() { view.element.style.setProperty('cursor', 'pointer') }
-                this.rodGroup.onMouseLeave = function() { view.element.style.setProperty('cursor', null) }
+                this.rodGroup.onMouseEnter = function() {
+                    view.element.style.setProperty('cursor', 'pointer');
+                },
+                this.rodGroup.onMouseLeave = function() {
+                    view.element.style.setProperty('cursor', null);
+                }
+    
             }
-            
+    
             return this.rodGroup
-        } else { return null }
+        } else {
+            return null
+        }
 }})
 
 /* ########### Brace ###############
@@ -274,7 +281,9 @@ var Brace = Base.extend({
         this.text.fillColor = 'black';
         this.text.fontSize = fontSize
         this.text.content = numberFormatting(factor) + ' x';
-        if (isValueHidden) { this.text.content = '? x' }
+        if (isValueHidden) {
+            this.text.content = '? x'
+        }
 
         this.brace.addChild(this.path)
         this.brace.addChild(this.text)
@@ -293,8 +302,12 @@ var Brace = Base.extend({
                 }
             }
 
-            this.brace.onMouseEnter = function() { view.element.style.setProperty('cursor', 'pointer') }
-            this.brace.onMouseLeave = function() { view.element.style.setProperty('cursor', null) }
+            this.brace.onMouseEnter = function() {
+                view.element.style.setProperty('cursor', 'pointer');
+            },
+            this.brace.onMouseLeave = function() {
+                view.element.style.setProperty('cursor', null);
+            }
         }
 
         this.brace.switch = function() {
@@ -311,8 +324,11 @@ var Brace = Base.extend({
 })
 
 /*  ########### MultiPartition ###############
+
 (On connait le nombre de part, on cherche la taille de chaque part)
+
 !!!!! FACTOR > 1
+
 shift : somme jusqu'au départ
 value : valeur itérée
 factor : nombre de fois la value => CONNU
@@ -337,8 +353,11 @@ var MultiPartition = Base.extend({
 })
 
 /* ########### MultiQuotition ###############
+
 (on connait la taille des part, on cherche le nombre de parts)
+
 !!!!! FACTOR > 1
+
 shift : somme jusqu'au départ
 value : valeur itérée => CONNU
 factor : nombre de fois la value 
@@ -394,3 +413,4 @@ var MultiQuotition = Base.extend({
         }
     }
 })
+

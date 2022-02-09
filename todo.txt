@@ -1,10 +1,9 @@
-Pouvoir écrire ce que l'on veut (billes)
-analyse de l'égalité avec ?
-
-inégalités ?
+NON : Pouvoir écrire ce que l'on veut (billes)
 
 // ZERO in multirod
-2+3 =   ----> n'affiche plus alors que c'est mieux si oui
+
+??? VIRER AUUSI LES CARACTERES SPECIAUX :
+    var lines = formulaSplitEqual.map(function(item) { return item.replace(/\,/g, '.').replace(/[a-zA-Z\s\?]*/g, '') }) 
 
 css verif
 
