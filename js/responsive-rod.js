@@ -19,7 +19,7 @@ var formulaInput = document.createElement('input');
 formulaInput.setAttribute('type', 'text');
 formulaInput.className = 'form-input'
 formulaInput.size = 37
-formulaInput.value = '1+2+3+4=10=5+5'
+formulaInput.value = '15=3?*5'
 
 divFormInline.appendChild(formulaInput)
 
@@ -65,35 +65,88 @@ function drawApp(paperWidth, formula) {
     project.clear()
 
     var formulaSplitEqual = formula.split('=')
-    var lines = formulaSplitEqual.map(function(item) { return item.replace(/[a-zA-Z\s\?]*/g, "") }) 
+    var lines = formulaSplitEqual.map(function(item) { return item.replace(/[a-zA-Z\s\?]*/g, '') }) 
 
     var sumList = []
     var modelLines = []
     var modelMax
+    var nbModelLine = lines.length
+
     for(var index in lines) {
-        var line = lines[index].split('+').map(function(item) { return parseFloat(item) })
-        modelLines.push(line)
-        var lineSum = line.reduce(reducer)
-        sumList.push(lineSum)
+
+        if(parseInt(lines[index])) {
+
+            var line = lines[index].split('+')
+            modelLines.push(line)
+    
+            var tempSum = [0]
+            for(var rod in line) {
+                if(line[rod].indexOf('*') > -1) {
+                    var productSplited = line[rod].split('*')
+                    var factor = parseFloat(productSplited[0])
+                    var value = parseFloat(productSplited[1])
+                    if(factor && value) {
+                        tempSum.push(parseFloat(productSplited[0])*parseFloat(productSplited[1]))
+                    }
+                } else {
+                    tempSum.push(parseFloat(line[rod]))
+                }
+            }
+            var lineSum = tempSum.reduce(reducer)
+            sumList.push(lineSum)
+        }
     }
     modelMax = Math.max.apply(Math, sumList)
 
     var modelLinesIsValueHidden = []
     for(var index in formulaSplitEqual) {
-        var line = formulaSplitEqual[index].split('+').map(function(item) { 
-            return item.indexOf("?") > -1 })
+        var line = formulaSplitEqual[index].split('+').map(function(item) { return item.replace(/[0-9.a-zA-Z\s]*/g, '') })
         modelLinesIsValueHidden.push(line)
     }
 
     for(var i in modelLines) {
         var shift = 0
         for(var j in modelLines[i]) {
-            //shift, value, sum, line, isValueHidden, isSwitchON, paperWidth
-            new Rod(shift, modelLines[i][j], modelMax, i, modelLinesIsValueHidden[i][j], true, paperWidth)
-            shift += modelLines[i][j]
+            if(modelLinesIsValueHidden[i][j] == '*?') {
+                var productSplited = modelLines[i][j].split('*')
+                    var factor = parseFloat(productSplited[0])
+                    var value = parseFloat(productSplited[1])
+                if(factor && value) {
+                    new MultiPartition(shift, value, factor, modelMax, parseInt(i), true, paperWidth)
+                    shift += factor*value
+                }
+            } else if(modelLinesIsValueHidden[i][j] == '*' || modelLinesIsValueHidden[i][j] == '?*?') {
+                var productSplited = modelLines[i][j].split('*')
+                    var factor = parseFloat(productSplited[0])
+                    var value = parseFloat(productSplited[1])
+                if(factor && value && modelMax) {
+                    new MultiPartition(shift, value, factor, modelMax, parseInt(i), false, paperWidth)
+                    shift += factor*value
+                }
+            } else if(modelLinesIsValueHidden[i][j] == '?*') {
+
+                var isLastLine = nbModelLine == parseInt(i) + 1
+                var isFirstLine = parseInt(i) == 0
+                var type = 'none'
+                if (isFirstLine) { type = 'top' }
+                if (isLastLine) { type = 'bottom' }
+
+                var productSplited = modelLines[i][j].split('*')
+                var factor = parseFloat(productSplited[0])
+                var value = parseFloat(productSplited[1])
+                if(factor && value && modelMax) {
+                    new MultiQuotition(shift, value, factor, modelMax, parseInt(i), type, paperWidth)
+                    shift += factor*value
+                }
+            } else if(modelLinesIsValueHidden[i][j] == '?') {
+                new Rod(shift, parseFloat(modelLines[i][j]), modelMax, parseInt(i), true, true, paperWidth)
+                shift += parseFloat(modelLines[i][j])
+            }  else {
+                new Rod(shift, parseFloat(modelLines[i][j]), modelMax, parseInt(i), false, true, paperWidth)
+                shift += parseFloat(modelLines[i][j])
+            }  
         }
     }
-
 }
 /* ########### Rod ###############
 shift : somme jusqu'au départ
@@ -173,7 +226,7 @@ isSwitchON : factor / ?
 
 var Brace = Base.extend({
 
-    initialize: function(shift, value, factor, sum, line, isValueHidden, isSwitchON, paperWidth) {
+    initialize: function(shift, value, factor, sum, line, isValueHidden, isSwitchON, type, paperWidth) {
 
         this.brace = new Group()
         this.isValueHidden = isValueHidden
@@ -182,17 +235,20 @@ var Brace = Base.extend({
         var barceLength = paperWidth/2
         var yShift = rodMarginTop + line*rodHeight
         var xShift = shift*barceLength/sum
+
+        var epsilon = 0
+        if (type == 'top') { epsilon = 1}
         
         this.path = new Path();
-        this.path.add(xShift + paperWidth/4, yShift);
-        this.path.curveTo(new Point(xShift + paperWidth/4 + .25*u, .2*rodHeight + yShift), new Point(xShift + paperWidth/4 + 1*u, .25*rodHeight + yShift));
-        this.path.curveTo(new Point(xShift + paperWidth/4 + 1.75*u, .3*rodHeight + yShift), new Point(xShift + paperWidth/4 + 2*u, .5*rodHeight + yShift));
-        this.path.curveTo(new Point(xShift + paperWidth/4 + 2.25*u, .3*rodHeight + yShift), new Point(xShift + paperWidth/4 + 3*u, .25*rodHeight + yShift));
-        this.path.curveTo(new Point(xShift + paperWidth/4 + 3.75*u, .2*rodHeight + yShift), new Point(xShift + paperWidth/4 + 4*u, yShift));
+        this.path.add(xShift + paperWidth/4, -rodHeight*epsilon + yShift);
+        this.path.curveTo(new Point(xShift + paperWidth/4 + .25*u, -1.4*rodHeight*epsilon + .2*rodHeight + yShift), new Point(xShift + paperWidth/4 + 1*u, -1.5*rodHeight*epsilon + .25*rodHeight + yShift));
+        this.path.curveTo(new Point(xShift + paperWidth/4 + 1.75*u, -1.6*rodHeight*epsilon + .3*rodHeight + yShift), new Point(xShift + paperWidth/4 + 2*u, -2*rodHeight*epsilon + .5*rodHeight + yShift));
+        this.path.curveTo(new Point(xShift + paperWidth/4 + 2.25*u, -1.6*rodHeight*epsilon + .3*rodHeight + yShift), new Point(xShift + paperWidth/4 + 3*u, -1.5*rodHeight*epsilon + .25*rodHeight + yShift));
+        this.path.curveTo(new Point(xShift + paperWidth/4 + 3.75*u, -1.4*rodHeight*epsilon + .2*rodHeight + yShift), new Point(xShift + paperWidth/4 + 4*u, -rodHeight*epsilon + yShift));
         this.path.strokeColor = '#0';
         this.path.strokeWidth = 2
         this.path.selected = false;
-        this.text = new PointText(new Point(xShift + paperWidth/4 + 2*u, rodHeight + yShift));
+        this.text = new PointText(new Point(xShift + paperWidth/4 + 2*u, rodHeight + epsilon*(-2.75*rodHeight) + yShift));
         this.text.justification = 'center';
         this.text.fillColor = 'black';
         this.text.fontSize = 20
@@ -283,44 +339,50 @@ line : numéro de la ligne
 
 var MultiQuotition = Base.extend({
 
-    initialize: function(shift, value, factor, sum, line, paperWidth) {
+    initialize: function(shift, value, factor, sum, line, type, paperWidth) {
 
         this.multiQuotition = new Group()
 
         var xShift = shift*paperWidth/(2*sum)
         var u = value*factor*paperWidth/(8*sum)
 
-        var startRod = new Rod(shift, value, sum, line, false, false, paperWidth)
-        var endRod = new Rod(shift + (factor - 1)*value, value, sum, line, false, false, paperWidth)
-        var coma = new PointText()
-        coma = new PointText(new Point(xShift + paperWidth/4 + 2*u, textPosition + rodMarginTop + line*rodHeight));
-        coma.justification = 'center';
-        coma.fillColor = 'black';
-        coma.fontSize = 40
-        coma.content = '...';
-
-        this.brace = new Brace(shift, value, factor, sum, line + 1, true, true, paperWidth)
-        this.multiQuotition.addChild(startRod)
-        this.multiQuotition.addChild(endRod)
-        this.multiQuotition.addChild(coma)
-        this.multiQuotition.addChild(this.brace)
-
         this.multiPartition = new Group()
 
         for(var rodNumber = 0; rodNumber < factor; rodNumber++) {
-            var rod = new Rod(shift + rodNumber*value, value, sum, line, false, false, paperWidth)
+            var rod = new Rod(shift + rodNumber*value, value, sum, line, false, factor < 3, paperWidth)
             this.multiPartition.addChild(rod)
         }
 
         this.multiPartition.visible = false
 
-        var that = this
-        this.brace.onMouseDown = function() {
-            that.multiPartition.visible = !that.multiPartition.visible
-            that.brace.switch()
-        }
+        if(factor > 2) {
+            var startRod = new Rod(shift, value, sum, line, false, false, paperWidth)
+            var endRod = new Rod(shift + (factor - 1)*value, value, sum, line, false, false, paperWidth)
+            var coma = new PointText()
+            coma = new PointText(new Point(xShift + paperWidth/4 + 2*u, textPosition + rodMarginTop + line*rodHeight));
+            coma.justification = 'center';
+            coma.fillColor = 'black';
+            coma.fontSize = 40
+            coma.content = '...';
 
-        return this.multiQuotition
+        if(type != 'none') {
+            this.brace = new Brace(shift, value, factor, sum, line + 1, true, true, type, paperWidth)
+            this.multiQuotition.addChild(startRod)
+            this.multiQuotition.addChild(endRod)
+            this.multiQuotition.addChild(coma)
+            this.multiQuotition.addChild(this.brace)
+
+            var that = this
+            this.brace.onMouseDown = function() {
+                that.multiPartition.visible = !that.multiPartition.visible
+                that.brace.switch()
+            }
+        }
+            return this.multiQuotition
+        } else {
+            this.multiPartition.visible = true
+            return this.multiPartition
+        }
     }
 })
 

@@ -4,7 +4,9 @@ analyse de l'égalité avec ?
 inégalités ?
 
 // ZERO in multirod
+2+3 =   ----> n'affiche plus alors que c'est mieux si oui
 
+css verif
 
 fraction / LaTeX
 dl eps/pdf
