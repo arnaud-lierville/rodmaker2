@@ -1,27 +1,28 @@
-NON : Pouvoir écrire ce que l'on veut (billes)
 
+=> feat ##################################################
 si ligne "nulle" => remonter
-
-// ZERO in multirod
-
 TODO : heigthRod en fonction de la hauteur de la view
 
-REMPLACER ??? :  !isNaN(factor) && !isNaN(value)) PAR (factor && value) ???
+=> fix ##################################################
 
-??? VIRER AUUSI LES CARACTERES SPECIAUX : SAUF / !!!
+IN PROGRESS : REMPLACER ??? :  !isNaN(factor) && !isNaN(value)) PAR (factor && value) ???
+
+=> formula ##################################################
+??? FULL LaTeX ??? => YES for 3x + 5 = 2x + 1
+??? VIRER AUUSI LES CARACTERES SPECIAUX : SAUF '/' !!!
     var lines = formulaSplitEqual.map(function(item) { return item.replace(/\,/g, '.').replace(/[a-zA-Z\s\?]*/g, '') }) 
+??? : Pouvoir écrire ce que l'on veut (billes)
 
-css verif
-
-fraction / LaTeX
+=> utils ##################################################
 dl eps/pdf
 
+=> css & co ##################################################
 favicon
+css verif
 color
 strokewidth
 
-
-Notes :
+=> Notes ##################################################
 https://github.com/paperjs/paper.js/issues/1832
 
 

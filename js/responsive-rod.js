@@ -16,8 +16,9 @@ var latexToImg = function(formula) {
 }
 
 /* scene */
-var rodHeight = 40
+var rodHeight = 80
 var textPosition = 27*rodHeight/40
+var fracPosition = 20*textPosition/27
 var rodMarginTop = 100
 var fontSize = rodHeight/2
 
@@ -29,7 +30,7 @@ var formulaInput = document.createElement('input');
 formulaInput.setAttribute('type', 'text');
 formulaInput.className = 'form-input'
 formulaInput.size = 37
-formulaInput.value = '?5*2=10=3.3+6,7=7+?3=5*2?'//'15=3?*5'//
+formulaInput.value = '3?*1/2'//'1=1/2+1/3+1/6' //'?5*2=10=3.3+6,7=7+?3=5*2?'//'15=3?*5'//
 
 divFormInline.appendChild(formulaInput)
 
@@ -127,18 +128,18 @@ function drawApp(paperWidth, formula) {
                 var productSplited = modelLines[i][j].split('*')
                     var factor = deepEval(productSplited[0])
                     var value = deepEval(productSplited[1])
-                if(!isNaN(factor) && !isNaN(value)) {
+                //if(!isNaN(factor) && !isNaN(value)) {// && modelMax && modelMax != Infinity) {
                     new MultiPartition(shift, productSplited[1], productSplited[0], modelMax, parseInt(i), true, paperWidth)
                     shift += factor*value
-                }
+                //}
             } else if(modelLinesIsValueHidden[i][j] == '*' || modelLinesIsValueHidden[i][j] == '?*?') {
                 var productSplited = modelLines[i][j].split('*')
                 var factor = deepEval(productSplited[0])
-                    var value = deepEval(productSplited[1])
-                    if(!isNaN(factor) && !isNaN(value) && modelMax) {
+                var value = deepEval(productSplited[1])
+                //if(!isNaN(factor) && !isNaN(value)) {// && modelMax && modelMax != Infinity) {
                     new MultiPartition(shift, productSplited[1], productSplited[0], modelMax, parseInt(i), false, paperWidth)
                     shift += factor*value
-                }
+                //}
             } else if(modelLinesIsValueHidden[i][j] == '?*') {
                 
                 var isLastLine = nbModelLine == parseInt(i) + 1
@@ -150,10 +151,10 @@ function drawApp(paperWidth, formula) {
                 var productSplited = modelLines[i][j].split('*')
                 var factor = deepEval(productSplited[0])
                 var value = deepEval(productSplited[1])
-                if(!isNaN(factor) && !isNaN(value) && modelMax) {
-                    new MultiQuotition(shift, value, factor, modelMax, parseInt(i), type, paperWidth)
+                //if(!isNaN(factor) && !isNaN(value)) {// && modelMax && modelMax != Infinity) {
+                    new MultiQuotition(shift, productSplited[1], productSplited[0], modelMax, parseInt(i), type, paperWidth)
                     shift += factor*value
-                }
+                //}
             } else if(modelLinesIsValueHidden[i][j] == '?') {
                 new Rod(shift, modelLines[i][j], modelMax, parseInt(i), true, true, paperWidth)
                 shift += deepEval(modelLines[i][j])
@@ -178,7 +179,8 @@ var Rod = Base.extend({
 
         var value = deepEval(originalValue)
 
-        if(!isNaN(value) && value != undefined && value != 0) {
+        //(factor && value) {//!isNaN(factor) && !isNaN(value)) {
+        if(value && value != undefined && value != 0 && sum !=0 && sum != Infinity) {
             this.rodGroup = new Group();
             this.isValueHidden = isValueHidden
             var rodLength = paperWidth/2
@@ -196,24 +198,26 @@ var Rod = Base.extend({
             this.text.content = numberFormatting(value)
             if (isValueHidden) { this.text.content = '?' }
 
-            // this.text.visible = false
-            // var svgGroup = paper.project.importSVG(latexToImg('\\dfrac{1}{6}'));
-            // var bounds;
-            // svgGroup.scale(rodHeight/5.7);
-            // // for automatic scaling, use these lines instead:
-            // // bounds = svgGroup.strokeBounds;
-            // // svgGroup.scale(40 / bounds.height);
-            // bounds = svgGroup.strokeBounds;
-            // //svgGroup.position.x = -bounds.x+10;
-            // svgGroup.position.x = paperWidth/4 + 0.5*value*rodLength/sum + shift*rodLength/sum
-            // //svgGroup.position.y = -bounds.y+10;
-            // svgGroup.position.y = rodMarginTop + 40 + line*rodHeight
-    
+            this.svgGroup = new Group()
+            var isValueFraction = originalValue.toString().indexOf('/') > -1
+            var fractionSpited = originalValue.toString().split('/')
+            var numerator = fractionSpited[0]
+            var denominator = fractionSpited[1]
+            if(!isNaN(numerator) && !isNaN(denominator)) {
+                this.svgGroup = paper.project.importSVG(latexToImg('\\dfrac{'+ numerator + '}{' + denominator + '}'));
+                this.svgGroup.scale(rodHeight/6);
+                this.svgGroup.position.x = paperWidth/4 + 0.5*value*rodLength/sum + shift*rodLength/sum
+                this.svgGroup.position.y = rodMarginTop + fracPosition + line*rodHeight
+            }
+
+            this.text.visible = !isValueFraction
+            this.svgGroup.visible = isValueFraction
+
+            if (isValueHidden) { this.text.visible = true; this.svgGroup.visible = !isValueFraction}
+
             this.rodGroup.addChild(this.path)
             this.rodGroup.addChild(this.text)
-    
-            this.rodGroup.addChild(this.path)
-            this.rodGroup.addChild(this.text)
+            this.rodGroup.addChild(this.svgGroup)
     
             if(isSwitchON) {
     
@@ -224,9 +228,13 @@ var Rod = Base.extend({
                     if(that.isValueHidden) {
                         that.isValueHidden = false
                         that.text.content = numberFormatting(value)
+                        that.text.visible = !isValueFraction
+                        that.svgGroup.visible = isValueFraction
                     } else {
                         that.isValueHidden = true
                         that.text.content = '?'
+                        that.text.visible = true
+                        that.svgGroup.visible = !isValueFraction
                     }
                 }
         
@@ -255,7 +263,7 @@ var Brace = Base.extend({
         var value = deepEval(originalValue)
         var factor = deepEval(originalFactor)
 
-        if(!isNaN(factor) && !isNaN(value)) {
+        if(factor && value) {//!isNaN(factor) && !isNaN(value)) {
             this.brace = new Group()
             this.isValueHidden = isValueHidden
 
@@ -390,19 +398,19 @@ var MultiQuotition = Base.extend({
                 coma.fontSize = fontSize*2
                 coma.content = '...';
 
-            if(type != 'none') {
-                this.brace = new Brace(shift, originalValue, factor, sum, line + 1, true, true, type, paperWidth)
-                this.multiQuotition.addChild(startRod)
-                this.multiQuotition.addChild(endRod)
-                this.multiQuotition.addChild(coma)
-                this.multiQuotition.addChild(this.brace)
+                if(type != 'none') {
+                    this.brace = new Brace(shift, originalValue, factor, sum, line + 1, true, true, type, paperWidth)
+                    this.multiQuotition.addChild(startRod)
+                    this.multiQuotition.addChild(endRod)
+                    this.multiQuotition.addChild(coma)
+                    this.multiQuotition.addChild(this.brace)
 
-                var that = this
-                this.brace.onMouseDown = function() {
-                    that.multiPartition.visible = !that.multiPartition.visible
-                    that.brace.switch()
+                    var that = this
+                    this.brace.onMouseDown = function() {
+                        that.multiPartition.visible = !that.multiPartition.visible
+                        that.brace.switch()
+                    }
                 }
-            }
                 return this.multiQuotition
             } else {
                 this.multiPartition.visible = true
