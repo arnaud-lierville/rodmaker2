@@ -16,7 +16,7 @@ var latexToImg = function(formula) {
 }
 
 /* scene */
-var rodHeight = 80
+var rodHeight = 40
 var textPosition = 27*rodHeight/40
 var fracPosition = 20*textPosition/27
 var rodMarginTop = 100
@@ -30,7 +30,7 @@ var formulaInput = document.createElement('input');
 formulaInput.setAttribute('type', 'text');
 formulaInput.className = 'form-input'
 formulaInput.size = 37
-formulaInput.value = '3?*1/2'//'1=1/2+1/3+1/6' //'?5*2=10=3.3+6,7=7+?3=5*2?'//'15=3?*5'//
+formulaInput.value = '?5*5/2=10=3.3+6,7=7+?3=5*2/3?'//'3?*1/2'//'1=1/2+1/3+1/6' //'?5*2=10=3.3+6,7=7+?3=5*2?'//'15=3?*5'//
 
 divFormInline.appendChild(formulaInput)
 
@@ -101,9 +101,7 @@ function drawApp(paperWidth, formula) {
                         tempSum.push(factor*value)
                     }
                 } else {
-                    if(!isNaN(deepEval(line[rod]))) {// line[rod] != '') {
-                        tempSum.push(deepEval(line[rod]))
-                    }
+                    if(!isNaN(deepEval(line[rod]))) { tempSum.push(deepEval(line[rod])) }
                 }
             }
             var lineSum = tempSum.reduce(reducer)
@@ -121,48 +119,53 @@ function drawApp(paperWidth, formula) {
     }
 
     /* model building */
+    var realLileNumber = 0
+    var changeLine = false
     for(var i in modelLines) {
         var shift = 0
         for(var j in modelLines[i]) {
+            var productSplited = modelLines[i][j].split('*')
+            var sum = deepEval(modelLines[i][j])
+            var factor = deepEval(productSplited[0])
+            var value = deepEval(productSplited[1])
             if(modelLinesIsValueHidden[i][j] == '*?') {
-                var productSplited = modelLines[i][j].split('*')
-                    var factor = deepEval(productSplited[0])
-                    var value = deepEval(productSplited[1])
-                //if(!isNaN(factor) && !isNaN(value)) {// && modelMax && modelMax != Infinity) {
-                    new MultiPartition(shift, productSplited[1], productSplited[0], modelMax, parseInt(i), true, paperWidth)
+                if(factor != 0 && value != 0) {
+                    new MultiPartition(shift, productSplited[1], productSplited[0], modelMax, realLileNumber, true, paperWidth)
                     shift += factor*value
-                //}
+                    changeLine = true
+                }
             } else if(modelLinesIsValueHidden[i][j] == '*' || modelLinesIsValueHidden[i][j] == '?*?') {
-                var productSplited = modelLines[i][j].split('*')
-                var factor = deepEval(productSplited[0])
-                var value = deepEval(productSplited[1])
-                //if(!isNaN(factor) && !isNaN(value)) {// && modelMax && modelMax != Infinity) {
-                    new MultiPartition(shift, productSplited[1], productSplited[0], modelMax, parseInt(i), false, paperWidth)
+                if(factor != 0 && value != 0) {
+                    new MultiPartition(shift, productSplited[1], productSplited[0], modelMax, realLileNumber, false, paperWidth)
                     shift += factor*value
-                //}
+                    changeLine = true
+                }
             } else if(modelLinesIsValueHidden[i][j] == '?*') {
-                
-                var isLastLine = nbModelLine == parseInt(i) + 1
-                var isFirstLine = parseInt(i) == 0
+                var isLastLine = nbModelLine == realLileNumber + 1
+                var isFirstLine = realLileNumber == 0
                 var type = 'none'
                 if (isFirstLine) { type = 'top' }
                 if (isLastLine) { type = 'bottom' }
-
-                var productSplited = modelLines[i][j].split('*')
-                var factor = deepEval(productSplited[0])
-                var value = deepEval(productSplited[1])
-                //if(!isNaN(factor) && !isNaN(value)) {// && modelMax && modelMax != Infinity) {
-                    new MultiQuotition(shift, productSplited[1], productSplited[0], modelMax, parseInt(i), type, paperWidth)
+                if(factor != 0 && value != 0) {
+                    new MultiQuotition(shift, productSplited[1], productSplited[0], modelMax, realLileNumber, type, paperWidth)
                     shift += factor*value
-                //}
+                    changeLine = true
+                }
             } else if(modelLinesIsValueHidden[i][j] == '?') {
-                new Rod(shift, modelLines[i][j], modelMax, parseInt(i), true, true, paperWidth)
-                shift += deepEval(modelLines[i][j])
+                if(sum != 0) {
+                    new Rod(shift, modelLines[i][j], modelMax, realLileNumber, true, true, paperWidth)
+                    shift += sum
+                    changeLine = true
+                }
             }  else {
-                new Rod(shift, modelLines[i][j], modelMax, parseInt(i), false, true, paperWidth)
-                shift += deepEval(modelLines[i][j])
+                if(sum != 0) {
+                    new Rod(shift, modelLines[i][j], modelMax, realLileNumber, false, true, paperWidth)
+                    shift += sum
+                    changeLine = true
+                }
             }  
         }
+        if(changeLine = true) { realLileNumber += 1}
     }
 }
 /* ########### Rod ###############
@@ -372,7 +375,7 @@ var MultiQuotition = Base.extend({
         var value = deepEval(originalValue)
         var factor = deepEval(originalFactor)
 
-        if(!isNaN(factor) && !isNaN(value)) {
+        if(factor && value) {//(!isNaN(factor) && !isNaN(value)) {
 
             this.multiQuotition = new Group()
 
