@@ -1,8 +1,14 @@
 NON : Pouvoir écrire ce que l'on veut (billes)
 
+si ligne "nulle" => remonter
+
 // ZERO in multirod
 
-??? VIRER AUUSI LES CARACTERES SPECIAUX :
+TODO : heigthRod en fonction de la hauteur de la view
+
+REMPLACER ??? :  !isNaN(factor) && !isNaN(value)) PAR (factor && value) ???
+
+??? VIRER AUUSI LES CARACTERES SPECIAUX : SAUF / !!!
     var lines = formulaSplitEqual.map(function(item) { return item.replace(/\,/g, '.').replace(/[a-zA-Z\s\?]*/g, '') }) 
 
 css verif

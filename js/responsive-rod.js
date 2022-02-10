@@ -7,8 +7,8 @@ paper.view.onResize = function() {
 var reducer = function(previousValue, currentValue) { return previousValue + currentValue }
 
 function numberFormatting(value) { return value.toString().replace('.', ',') }
-function stringToFloat(string) { return parseFloat(string.replace(',', '.')) }
-var deepEval = function(value) { try { return math.evaluate(value) } catch (e) { return 42 } }
+//function stringToFloat(string) { return parseFloat(string.replace(',', '.')) }
+var deepEval = function(value) { try { return math.evaluate(value) } catch (e) { return false } }
 
 var latexToImg = function(formula) {
     var wrapper = MathJax.tex2svg(formula, { em: 10, ex: 5, display: true })
@@ -82,7 +82,7 @@ function drawApp(paperWidth, formula) {
     var modelMax = 0
     var nbModelLine = lines.length
 
-    /* modelMax calculating */
+    /* modelMax computing */
     for(var index in lines) {
 
         if(!isNaN(parseInt(lines[index]))) {
@@ -94,14 +94,14 @@ function drawApp(paperWidth, formula) {
             for(var rod in line) {
                 if(line[rod].indexOf('*') > -1) {
                     var productSplited = line[rod].split('*')
-                    var factor = parseFloat(productSplited[0])
-                    var value = parseFloat(productSplited[1])
+                    var factor = deepEval(productSplited[0])
+                    var value = deepEval(productSplited[1])
                     if(!isNaN(factor) && !isNaN(value)) {
                         tempSum.push(factor*value)
                     }
                 } else {
-                    if(!isNaN(parseFloat(line[rod]))) {// line[rod] != '') {
-                        tempSum.push(parseFloat(line[rod]))
+                    if(!isNaN(deepEval(line[rod]))) {// line[rod] != '') {
+                        tempSum.push(deepEval(line[rod]))
                     }
                 }
             }
@@ -112,33 +112,35 @@ function drawApp(paperWidth, formula) {
     modelMax = Math.max.apply(Math, sumList)
     console.log('modelMax', modelMax)
 
+    /* hidden cells computing */
     var modelLinesIsValueHidden = []
     for(var index in formulaSplitEqual) {
-        var line = formulaSplitEqual[index].split('+').map(function(item) { return item.replace(/[0-9a-zA-Z\s.,]*/g, '') })
+        var line = formulaSplitEqual[index].split('+').map(function(item) { return item.replace(/[0-9a-zA-Z\s.,\/]*/g, '') })
         modelLinesIsValueHidden.push(line)
     }
 
+    /* model building */
     for(var i in modelLines) {
         var shift = 0
         for(var j in modelLines[i]) {
             if(modelLinesIsValueHidden[i][j] == '*?') {
                 var productSplited = modelLines[i][j].split('*')
-                    var factor = parseFloat(productSplited[0])
-                    var value = parseFloat(productSplited[1])
+                    var factor = deepEval(productSplited[0])
+                    var value = deepEval(productSplited[1])
                 if(!isNaN(factor) && !isNaN(value)) {
-                    new MultiPartition(shift, value, factor, modelMax, parseInt(i), true, paperWidth)
+                    new MultiPartition(shift, productSplited[1], productSplited[0], modelMax, parseInt(i), true, paperWidth)
                     shift += factor*value
                 }
             } else if(modelLinesIsValueHidden[i][j] == '*' || modelLinesIsValueHidden[i][j] == '?*?') {
                 var productSplited = modelLines[i][j].split('*')
-                    var factor = parseFloat(productSplited[0])
-                    var value = parseFloat(productSplited[1])
+                var factor = deepEval(productSplited[0])
+                    var value = deepEval(productSplited[1])
                     if(!isNaN(factor) && !isNaN(value) && modelMax) {
-                    new MultiPartition(shift, value, factor, modelMax, parseInt(i), false, paperWidth)
+                    new MultiPartition(shift, productSplited[1], productSplited[0], modelMax, parseInt(i), false, paperWidth)
                     shift += factor*value
                 }
             } else if(modelLinesIsValueHidden[i][j] == '?*') {
-
+                
                 var isLastLine = nbModelLine == parseInt(i) + 1
                 var isFirstLine = parseInt(i) == 0
                 var type = 'none'
@@ -146,33 +148,35 @@ function drawApp(paperWidth, formula) {
                 if (isLastLine) { type = 'bottom' }
 
                 var productSplited = modelLines[i][j].split('*')
-                var factor = parseFloat(productSplited[0])
-                var value = parseFloat(productSplited[1])
+                var factor = deepEval(productSplited[0])
+                var value = deepEval(productSplited[1])
                 if(!isNaN(factor) && !isNaN(value) && modelMax) {
                     new MultiQuotition(shift, value, factor, modelMax, parseInt(i), type, paperWidth)
                     shift += factor*value
                 }
             } else if(modelLinesIsValueHidden[i][j] == '?') {
-                new Rod(shift, parseFloat(modelLines[i][j]), modelMax, parseInt(i), true, true, paperWidth)
-                shift += parseFloat(modelLines[i][j])
+                new Rod(shift, modelLines[i][j], modelMax, parseInt(i), true, true, paperWidth)
+                shift += deepEval(modelLines[i][j])
             }  else {
-                new Rod(shift, parseFloat(modelLines[i][j]), modelMax, parseInt(i), false, true, paperWidth)
-                shift += parseFloat(modelLines[i][j])
+                new Rod(shift, modelLines[i][j], modelMax, parseInt(i), false, true, paperWidth)
+                shift += deepEval(modelLines[i][j])
             }  
         }
     }
 }
 /* ########### Rod ###############
-shift : somme jusqu'au départ
-value : valeur de la barre
-sum : valeur totale de la ligne
-line : numéro de la ligne
-isValueHidden : true => la valeur de la barre est cachée
-isSwitchON : true => value / ?
+@shift : somme jusqu'au départ
+@value : valeur de la barre
+@sum : valeur totale de la ligne
+@line : numéro de la ligne
+@isValueHidden : true => la valeur de la barre est cachée
+@isSwitchON : true => value / ?
 */
 var Rod = Base.extend({
 
-    initialize: function(shift, value, sum, line, isValueHidden, isSwitchON, paperWidth) {
+    initialize: function(shift, originalValue, sum, line, isValueHidden, isSwitchON, paperWidth) {
+
+        var value = deepEval(originalValue)
 
         if(!isNaN(value) && value != undefined && value != 0) {
             this.rodGroup = new Group();
@@ -211,7 +215,6 @@ var Rod = Base.extend({
             this.rodGroup.addChild(this.path)
             this.rodGroup.addChild(this.text)
     
-    
             if(isSwitchON) {
     
                 var that = this
@@ -230,61 +233,79 @@ var Rod = Base.extend({
                 this.rodGroup.onMouseEnter = function() { view.element.style.setProperty('cursor', 'pointer') }
                 this.rodGroup.onMouseLeave = function() { view.element.style.setProperty('cursor', null) }
             }
-            
+
             return this.rodGroup
         } else { return null }
 }})
 
 /* ########### Brace ###############
-shift : somme jusqu'au départ
-value : valeur itérée
-factor : nombre de fois la value
-sum : valeur totale de la ligne
-line : numéro de la ligne
-isValueHidden : le factor est caché
-isSwitchON : factor / ?
+@shift : somme jusqu'au départ
+@value : valeur itérée
+@factor : nombre de fois la value
+@sum : valeur totale de la ligne
+@line : numéro de la ligne
+@isValueHidden : le factor est caché
+@isSwitchON : factor / ?
 */
 
 var Brace = Base.extend({
 
-    initialize: function(shift, value, factor, sum, line, isValueHidden, isSwitchON, type, paperWidth) {
+    initialize: function(shift, originalValue, originalFactor, sum, line, isValueHidden, isSwitchON, type, paperWidth) {
 
-        this.brace = new Group()
-        this.isValueHidden = isValueHidden
+        var value = deepEval(originalValue)
+        var factor = deepEval(originalFactor)
 
-        var u = value*factor*paperWidth/(8*sum)
-        var barceLength = paperWidth/2
-        var yShift = rodMarginTop + line*rodHeight
-        var xShift = shift*barceLength/sum
+        if(!isNaN(factor) && !isNaN(value)) {
+            this.brace = new Group()
+            this.isValueHidden = isValueHidden
 
-        var epsilon = 0
-        if (type == 'top') { epsilon = 1}
-        
-        this.path = new Path();
-        this.path.add(xShift + paperWidth/4, -rodHeight*epsilon + yShift);
-        this.path.curveTo(new Point(xShift + paperWidth/4 + .25*u, -1.4*rodHeight*epsilon + .2*rodHeight + yShift), new Point(xShift + paperWidth/4 + 1*u, -1.5*rodHeight*epsilon + .25*rodHeight + yShift));
-        this.path.curveTo(new Point(xShift + paperWidth/4 + 1.75*u, -1.6*rodHeight*epsilon + .3*rodHeight + yShift), new Point(xShift + paperWidth/4 + 2*u, -2*rodHeight*epsilon + .5*rodHeight + yShift));
-        this.path.curveTo(new Point(xShift + paperWidth/4 + 2.25*u, -1.6*rodHeight*epsilon + .3*rodHeight + yShift), new Point(xShift + paperWidth/4 + 3*u, -1.5*rodHeight*epsilon + .25*rodHeight + yShift));
-        this.path.curveTo(new Point(xShift + paperWidth/4 + 3.75*u, -1.4*rodHeight*epsilon + .2*rodHeight + yShift), new Point(xShift + paperWidth/4 + 4*u, -rodHeight*epsilon + yShift));
-        this.path.strokeColor = '#0';
-        this.path.strokeWidth = 2
-        this.path.selected = false;
-        this.text = new PointText(new Point(xShift + paperWidth/4 + 2*u, rodHeight + epsilon*(-2.75*rodHeight) + yShift));
-        this.text.justification = 'center';
-        this.text.fillColor = 'black';
-        this.text.fontSize = fontSize
-        this.text.content = numberFormatting(factor) + ' x';
-        if (isValueHidden) { this.text.content = '? x' }
+            var u = value*factor*paperWidth/(8*sum)
+            var barceLength = paperWidth/2
+            var yShift = rodMarginTop + line*rodHeight
+            var xShift = shift*barceLength/sum
 
-        this.brace.addChild(this.path)
-        this.brace.addChild(this.text)
+            var epsilon = 0
+            if (type == 'top') { epsilon = 1}
+            
+            this.path = new Path();
+            this.path.add(xShift + paperWidth/4, -rodHeight*epsilon + yShift);
+            this.path.curveTo(new Point(xShift + paperWidth/4 + .25*u, -1.4*rodHeight*epsilon + .2*rodHeight + yShift), new Point(xShift + paperWidth/4 + 1*u, -1.5*rodHeight*epsilon + .25*rodHeight + yShift));
+            this.path.curveTo(new Point(xShift + paperWidth/4 + 1.75*u, -1.6*rodHeight*epsilon + .3*rodHeight + yShift), new Point(xShift + paperWidth/4 + 2*u, -2*rodHeight*epsilon + .5*rodHeight + yShift));
+            this.path.curveTo(new Point(xShift + paperWidth/4 + 2.25*u, -1.6*rodHeight*epsilon + .3*rodHeight + yShift), new Point(xShift + paperWidth/4 + 3*u, -1.5*rodHeight*epsilon + .25*rodHeight + yShift));
+            this.path.curveTo(new Point(xShift + paperWidth/4 + 3.75*u, -1.4*rodHeight*epsilon + .2*rodHeight + yShift), new Point(xShift + paperWidth/4 + 4*u, -rodHeight*epsilon + yShift));
+            this.path.strokeColor = '#0';
+            this.path.strokeWidth = 2
+            this.path.selected = false;
+            this.text = new PointText(new Point(xShift + paperWidth/4 + 2*u, rodHeight + epsilon*(-2.75*rodHeight) + yShift));
+            this.text.justification = 'center';
+            this.text.fillColor = 'black';
+            this.text.fontSize = fontSize
+            this.text.content = numberFormatting(factor) + ' x';
+            if (isValueHidden) { this.text.content = '? x' }
 
-        if(isSwitchON) {
-            var that = this
+            this.brace.addChild(this.path)
+            this.brace.addChild(this.text)
 
-            this.brace.onMouseDown = function() {
+            if(isSwitchON) {
+                var that = this
 
-                if(that.isValueHidden) {
+                this.brace.onMouseDown = function() {
+
+                    if(that.isValueHidden) {
+                        that.isValueHidden = false
+                        that.text.content = numberFormatting(factor) + ' x';
+                    } else {
+                        that.isValueHidden = true
+                        that.text.content = '? x'
+                    }
+                }
+
+                this.brace.onMouseEnter = function() { view.element.style.setProperty('cursor', 'pointer') }
+                this.brace.onMouseLeave = function() { view.element.style.setProperty('cursor', null) }
+            }
+
+            this.brace.switch = function() {
+                if (that.isValueHidden) {
                     that.isValueHidden = false
                     that.text.content = numberFormatting(factor) + ' x';
                 } else {
@@ -292,105 +313,101 @@ var Brace = Base.extend({
                     that.text.content = '? x'
                 }
             }
-
-            this.brace.onMouseEnter = function() { view.element.style.setProperty('cursor', 'pointer') }
-            this.brace.onMouseLeave = function() { view.element.style.setProperty('cursor', null) }
-        }
-
-        this.brace.switch = function() {
-            if (that.isValueHidden) {
-                that.isValueHidden = false
-                that.text.content = numberFormatting(factor) + ' x';
-            } else {
-                that.isValueHidden = true
-                that.text.content = '? x'
-            }
-        }
-        return this.brace
+            return this.brace
+        }        
     }
 })
 
 /*  ########### MultiPartition ###############
 (On connait le nombre de part, on cherche la taille de chaque part)
-!!!!! FACTOR > 1
-shift : somme jusqu'au départ
-value : valeur itérée
-factor : nombre de fois la value => CONNU
-sum : valeur totale de la ligne
-line : numéro de la ligne
-isValueHidden : valeur / ?
+@shift : somme jusqu'au départ
+@value : valeur itérée
+@factor : nombre de fois la value => CONNU
+@sum : valeur totale de la ligne
+@line : numéro de la ligne
+@isValueHidden : valeur / ?
 */
 
 var MultiPartition = Base.extend({
 
-    initialize: function(shift, value, factor, sum, line, isValueHidden, paperWidth) {
+    initialize: function(shift, originalValue, originalFactor, sum, line, isValueHidden, paperWidth) {
 
-        this.multiPartition = new Group()
+        var value = deepEval(originalValue)
+        var factor = deepEval(originalFactor)
 
-        for(var rodNumber = 0; rodNumber < factor; rodNumber++) {
-            var rod = new Rod(shift + rodNumber*value, value, sum, line, isValueHidden, true, paperWidth)
-            this.multiPartition.addChild(rod)
+        if(factor && value) {//!isNaN(factor) && !isNaN(value)) {
+            this.multiPartition = new Group()
+
+            for(var rodNumber = 0; rodNumber < factor; rodNumber++) {
+                var rod = new Rod(shift + rodNumber*value, originalValue, sum, line, isValueHidden, true, paperWidth)
+                this.multiPartition.addChild(rod)
+            }
+
+            return this.multiPartition
         }
-
-        return this.multiPartition
     }
 })
 
 /* ########### MultiQuotition ###############
 (on connait la taille des part, on cherche le nombre de parts)
-!!!!! FACTOR > 1
-shift : somme jusqu'au départ
-value : valeur itérée => CONNU
-factor : nombre de fois la value 
-sum : valeur totale de la ligne
-line : numéro de la ligne
+@shift : somme jusqu'au départ
+@value : valeur itérée => CONNU
+@factor : nombre de fois la value 
+@sum : valeur totale de la ligne
+@line : numéro de la ligne
 */
 
 var MultiQuotition = Base.extend({
 
-    initialize: function(shift, value, factor, sum, line, type, paperWidth) {
+    initialize: function(shift, originalValue, originalFactor, sum, line, type, paperWidth) {
 
-        this.multiQuotition = new Group()
+        var value = deepEval(originalValue)
+        var factor = deepEval(originalFactor)
 
-        var xShift = shift*paperWidth/(2*sum)
-        var u = value*factor*paperWidth/(8*sum)
+        if(!isNaN(factor) && !isNaN(value)) {
 
-        this.multiPartition = new Group()
+            this.multiQuotition = new Group()
 
-        for(var rodNumber = 0; rodNumber < factor; rodNumber++) {
-            var rod = new Rod(shift + rodNumber*value, value, sum, line, false, factor < 3, paperWidth)
-            this.multiPartition.addChild(rod)
-        }
+            var xShift = shift*paperWidth/(2*sum)
+            var u = value*factor*paperWidth/(8*sum)
 
-        this.multiPartition.visible = false
+            this.multiPartition = new Group()
 
-        if(factor > 2) {
-            var startRod = new Rod(shift, value, sum, line, false, false, paperWidth)
-            var endRod = new Rod(shift + (factor - 1)*value, value, sum, line, false, false, paperWidth)
-            var coma = new PointText()
-            coma = new PointText(new Point(xShift + paperWidth/4 + 2*u, textPosition + rodMarginTop + line*rodHeight));
-            coma.justification = 'center';
-            coma.fillColor = 'black';
-            coma.fontSize = fontSize*2
-            coma.content = '...';
-
-        if(type != 'none') {
-            this.brace = new Brace(shift, value, factor, sum, line + 1, true, true, type, paperWidth)
-            this.multiQuotition.addChild(startRod)
-            this.multiQuotition.addChild(endRod)
-            this.multiQuotition.addChild(coma)
-            this.multiQuotition.addChild(this.brace)
-
-            var that = this
-            this.brace.onMouseDown = function() {
-                that.multiPartition.visible = !that.multiPartition.visible
-                that.brace.switch()
+            for(var rodNumber = 0; rodNumber < factor; rodNumber++) {
+                var rod = new Rod(shift + rodNumber*value, originalValue, sum, line, false, factor < 3, paperWidth)
+                this.multiPartition.addChild(rod)
             }
-        }
-            return this.multiQuotition
-        } else {
-            this.multiPartition.visible = true
-            return this.multiPartition
+
+            this.multiPartition.visible = false
+
+            if(factor > 2) {
+                var startRod = new Rod(shift, originalValue, sum, line, false, false, paperWidth)
+                var endRod = new Rod(shift + (factor - 1)*value, originalValue, sum, line, false, false, paperWidth)
+                var coma = new PointText()
+                coma = new PointText(new Point(xShift + paperWidth/4 + 2*u, textPosition + rodMarginTop + line*rodHeight));
+                coma.justification = 'center';
+                coma.fillColor = 'black';
+                coma.fontSize = fontSize*2
+                coma.content = '...';
+
+            if(type != 'none') {
+                this.brace = new Brace(shift, originalValue, factor, sum, line + 1, true, true, type, paperWidth)
+                this.multiQuotition.addChild(startRod)
+                this.multiQuotition.addChild(endRod)
+                this.multiQuotition.addChild(coma)
+                this.multiQuotition.addChild(this.brace)
+
+                var that = this
+                this.brace.onMouseDown = function() {
+                    that.multiPartition.visible = !that.multiPartition.visible
+                    that.brace.switch()
+                }
+            }
+                return this.multiQuotition
+            } else {
+                this.multiPartition.visible = true
+                return this.multiPartition
+            }
         }
     }
 })
