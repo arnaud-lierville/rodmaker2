@@ -106,7 +106,7 @@ checkInput.addEventListener('change', function() {
 function keyup(event) { window.dispatchEvent(new Event('keyup')); }
 function change(event) { window.dispatchEvent(new Event('change')); }
 
-/* main function*/
+/* main function */
 function drawApp(paperWidth, formula) {
 
     project.clear()
@@ -155,9 +155,9 @@ function drawApp(paperWidth, formula) {
 
     /* model building */
     var realLileNumber = 0
-    var changeLine = false
     for(var i in modelLines) {
         var shift = 0
+        var changeLine = false
         for(var j in modelLines[i]) {
             var productSplited = modelLines[i][j].split('*')
             var sum = deepEval(modelLines[i][j])
@@ -194,13 +194,14 @@ function drawApp(paperWidth, formula) {
                 }
             }  else {
                 if(sum != 0) {
+                    console.log('NOT')
                     new Rod(shift, modelLines[i][j], modelMax, realLileNumber, false, true, paperWidth, rodDefaultColor)
                     shift += sum
                     changeLine = true
                 }
             }  
         }
-        if(changeLine = true) { realLileNumber += 1}
+        if(changeLine == true) { realLileNumber += 1 }
     }
 }
 /* ########### Rod ###############
@@ -217,7 +218,6 @@ var Rod = Base.extend({
 
         var value = deepEval(originalValue)
 
-        //(factor && value) {//!isNaN(factor) && !isNaN(value)) {
         if(value && value != undefined && value != 0 && sum !=0 && sum != Infinity) {
             this.rodGroup = new Group();
             this.isValueHidden = isValueHidden
@@ -301,7 +301,7 @@ var Brace = Base.extend({
         var value = deepEval(originalValue)
         var factor = deepEval(originalFactor)
 
-        if(factor && value) {//!isNaN(factor) && !isNaN(value)) {
+        if(factor && value) {
             this.brace = new Group()
             this.isValueHidden = isValueHidden
 
@@ -418,7 +418,7 @@ var MultiQuotition = Base.extend({
         var value = deepEval(originalValue)
         var factor = deepEval(originalFactor)
 
-        if(factor && value) {//(!isNaN(factor) && !isNaN(value)) {
+        if(factor && value) {
 
             this.multiQuotition = new Group()
 
