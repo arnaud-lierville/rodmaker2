@@ -1,8 +1,6 @@
 
 => feat ##################################################
 TODO : heigthRod en fonction de la hauteur de la view
-10/10 : barre complète => couleur verte
-1+23/10=1+23*1/10=1+1+1+3/10=1+2+3/10=3+0,3=3,3
 
 => css & js & co ##################################################
 favicon
@@ -18,7 +16,6 @@ dl eps/pdf
 
 trop d'appels : ça lag
 attention largeur : 1+20/10+5/100= et exemple (h)
-Une seule ligne => ?=1,5 + 2,5 (example q et s) 
 
 => formula ##################################################
 ??? FULL LaTeX ??? => YES for 3x + 5 = 2x + 1
