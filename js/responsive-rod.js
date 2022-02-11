@@ -7,12 +7,45 @@ paper.view.onResize = function() {
 var reducer = function(previousValue, currentValue) { return previousValue + currentValue }
 
 function numberFormatting(value) { return value.toString().replace('.', ',') }
-//function stringToFloat(string) { return parseFloat(string.replace(',', '.')) }
 var deepEval = function(value) { try { return math.evaluate(value) } catch (e) { return false } }
 
 var latexToImg = function(formula) {
     var wrapper = MathJax.tex2svg(formula, { em: 10, ex: 5, display: true })
     return wrapper.querySelector('svg');
+}
+
+/* shorcut examples */
+formulaList = {
+    'a': '3*4? = 12 = ?4*3',
+    'z': '42=40+2',
+    'e': '42?=40+2',
+    'r': '42=40+2?',
+    't': '12=3*4',
+    'y': '12?=3*4',
+    'u': '12=3?*4',
+    'i': '12=3*4?',
+    'o': '14 = 3*4 + 2?',
+    'p': '2*5 = 10 = 5*2',
+    'q': '?=1.5 + 2,5',
+    's': '?=1/2+1/3+1/6',
+    'd': '6=3+4',
+    'f': '?5*5/2=10=3.3+6,7=7+?3=5*2/3?',
+    'g': '2*3=20*1/5=6/5=1/5+1/5+1/5+1/5+1/5=7*1/3',
+    'h': '1+23/10=1+23*1/10=1+1+1+3/10=1+2+3/10=3+0,3=3,3',
+    'j': '?5*5/2=10=3.3+6,7=7+?3=5*2/3?',
+    'k': '3?*1/2',
+    'l': '1=1/2+1/3+1/6',
+    'm': '?5*2=10=3.3+6,7=7+?3=5*2?',
+    'n': '15=3?*5',
+    'w': '3*4? = 12 = ?4*3'
+}
+
+function onKeyDown(event) {
+    var shortKey = event.key
+    if ('azertyuiopqsdfghjklmw'.indexOf(shortKey) > -1 && formulaInput != document.activeElement) {
+        formulaInput.value = formulaList[shortKey]
+        drawApp(paper.view.bounds.width, formulaList[shortKey])
+    }
 }
 
 /* scene */
@@ -21,8 +54,12 @@ var textPosition = 27*rodHeight/40
 var fracPosition = 20*textPosition/27
 var rodMarginTop = 100
 var fontSize = rodHeight/2
+var rodDefaultColor = '#FFFFFF'
+var rodDefalutStrokeColor = '#6b6b6b'
+var greenColorList = ['#5cb85c', '#91cf91']
+var braceColor = '#D9534F'
 
-/* formula input */
+/* html forms with formula input */
 var divFormInline = document.createElement('div')
 divFormInline.className = 'form-inline'
 
@@ -30,8 +67,7 @@ var formulaInput = document.createElement('input');
 formulaInput.setAttribute('type', 'text');
 formulaInput.className = 'form-input'
 formulaInput.size = 37
-formulaInput.value = '?5*5/2=10=3.3+6,7=7+?3=5*2/3?'//'3?*1/2'//'1=1/2+1/3+1/6' //'?5*2=10=3.3+6,7=7+?3=5*2?'//'15=3?*5'//
-
+formulaInput.value = formulaList['g']
 divFormInline.appendChild(formulaInput)
 
 var divFormSwitch = document.createElement('div')
@@ -71,6 +107,7 @@ checkInput.addEventListener('change', function() {
 function keyup(event) { window.dispatchEvent(new Event('keyup')); }
 function change(event) { window.dispatchEvent(new Event('change')); }
 
+/* main function*/
 function drawApp(paperWidth, formula) {
 
     project.clear()
@@ -109,7 +146,6 @@ function drawApp(paperWidth, formula) {
         }
     }
     modelMax = Math.max.apply(Math, sumList)
-    console.log('modelMax', modelMax)
 
     /* hidden cells computing */
     var modelLinesIsValueHidden = []
@@ -130,13 +166,13 @@ function drawApp(paperWidth, formula) {
             var value = deepEval(productSplited[1])
             if(modelLinesIsValueHidden[i][j] == '*?') {
                 if(factor != 0 && value != 0) {
-                    new MultiPartition(shift, productSplited[1], productSplited[0], modelMax, realLileNumber, true, paperWidth)
+                    new MultiPartition(shift, productSplited[1], productSplited[0], modelMax, realLileNumber, true, paperWidth, false)
                     shift += factor*value
                     changeLine = true
                 }
             } else if(modelLinesIsValueHidden[i][j] == '*' || modelLinesIsValueHidden[i][j] == '?*?') {
                 if(factor != 0 && value != 0) {
-                    new MultiPartition(shift, productSplited[1], productSplited[0], modelMax, realLileNumber, false, paperWidth)
+                    new MultiPartition(shift, productSplited[1], productSplited[0], modelMax, realLileNumber, false, paperWidth, true)
                     shift += factor*value
                     changeLine = true
                 }
@@ -153,13 +189,13 @@ function drawApp(paperWidth, formula) {
                 }
             } else if(modelLinesIsValueHidden[i][j] == '?') {
                 if(sum != 0) {
-                    new Rod(shift, modelLines[i][j], modelMax, realLileNumber, true, true, paperWidth)
+                    new Rod(shift, modelLines[i][j], modelMax, realLileNumber, true, true, paperWidth, rodDefaultColor)
                     shift += sum
                     changeLine = true
                 }
             }  else {
                 if(sum != 0) {
-                    new Rod(shift, modelLines[i][j], modelMax, realLileNumber, false, true, paperWidth)
+                    new Rod(shift, modelLines[i][j], modelMax, realLileNumber, false, true, paperWidth, rodDefaultColor)
                     shift += sum
                     changeLine = true
                 }
@@ -178,7 +214,7 @@ function drawApp(paperWidth, formula) {
 */
 var Rod = Base.extend({
 
-    initialize: function(shift, originalValue, sum, line, isValueHidden, isSwitchON, paperWidth) {
+    initialize: function(shift, originalValue, sum, line, isValueHidden, isSwitchON, paperWidth, color) {
 
         var value = deepEval(originalValue)
 
@@ -190,8 +226,8 @@ var Rod = Base.extend({
         
             var rectangle = new Rectangle(new Point(paperWidth/4 + shift*rodLength/sum, rodMarginTop + line*rodHeight), new Size(value*rodLength/sum, rodHeight));
             this.path = new Path.Rectangle(rectangle);
-            this.path.fillColor = '#FFFFFF'
-            this.path.strokeColor = '#0';
+            this.path.fillColor = color
+            this.path.strokeColor = rodDefalutStrokeColor
             this.path.strokeWidth = 2
             this.path.selected = false;
             this.text = new PointText(new Point(paperWidth/4 + 0.5*value*rodLength/sum + shift*rodLength/sum, rodMarginTop + textPosition + line*rodHeight));
@@ -284,12 +320,12 @@ var Brace = Base.extend({
             this.path.curveTo(new Point(xShift + paperWidth/4 + 1.75*u, -1.6*rodHeight*epsilon + .3*rodHeight + yShift), new Point(xShift + paperWidth/4 + 2*u, -2*rodHeight*epsilon + .5*rodHeight + yShift));
             this.path.curveTo(new Point(xShift + paperWidth/4 + 2.25*u, -1.6*rodHeight*epsilon + .3*rodHeight + yShift), new Point(xShift + paperWidth/4 + 3*u, -1.5*rodHeight*epsilon + .25*rodHeight + yShift));
             this.path.curveTo(new Point(xShift + paperWidth/4 + 3.75*u, -1.4*rodHeight*epsilon + .2*rodHeight + yShift), new Point(xShift + paperWidth/4 + 4*u, -rodHeight*epsilon + yShift));
-            this.path.strokeColor = '#0';
+            this.path.strokeColor = braceColor
             this.path.strokeWidth = 2
             this.path.selected = false;
             this.text = new PointText(new Point(xShift + paperWidth/4 + 2*u, rodHeight + epsilon*(-2.75*rodHeight) + yShift));
             this.text.justification = 'center';
-            this.text.fillColor = 'black';
+            this.text.fillColor = braceColor
             this.text.fontSize = fontSize
             this.text.content = numberFormatting(factor) + ' x';
             if (isValueHidden) { this.text.content = '? x' }
@@ -341,16 +377,24 @@ var Brace = Base.extend({
 
 var MultiPartition = Base.extend({
 
-    initialize: function(shift, originalValue, originalFactor, sum, line, isValueHidden, paperWidth) {
+    initialize: function(shift, originalValue, originalFactor, sum, line, isValueHidden, paperWidth, groupByColor) {
 
         var value = deepEval(originalValue)
         var factor = deepEval(originalFactor)
+        var nbBlockColor = 0
+        var shortFactor
 
-        if(factor && value) {//!isNaN(factor) && !isNaN(value)) {
+        if (groupByColor && value < 1) {
+            nbBlockColor = parseInt(factor*value)
+            shortFactor = parseInt(parseInt(factor*value)/value)
+        }
+
+        if(factor && value) {
             this.multiPartition = new Group()
-
             for(var rodNumber = 0; rodNumber < factor; rodNumber++) {
-                var rod = new Rod(shift + rodNumber*value, originalValue, sum, line, isValueHidden, true, paperWidth)
+                var color = rodDefaultColor
+                if (nbBlockColor != 0 && rodNumber < shortFactor) { color = greenColorList[Math.floor(parseInt((rodNumber*nbBlockColor)/shortFactor))%2] }
+                var rod = new Rod(shift + rodNumber*value, originalValue, sum, line, isValueHidden, true, paperWidth, color)
                 this.multiPartition.addChild(rod)
             }
 
@@ -385,15 +429,15 @@ var MultiQuotition = Base.extend({
             this.multiPartition = new Group()
 
             for(var rodNumber = 0; rodNumber < factor; rodNumber++) {
-                var rod = new Rod(shift + rodNumber*value, originalValue, sum, line, false, factor < 3, paperWidth)
+                var rod = new Rod(shift + rodNumber*value, originalValue, sum, line, false, factor < 3, paperWidth, rodDefaultColor)
                 this.multiPartition.addChild(rod)
             }
 
             this.multiPartition.visible = false
 
             if(factor > 2) {
-                var startRod = new Rod(shift, originalValue, sum, line, false, false, paperWidth)
-                var endRod = new Rod(shift + (factor - 1)*value, originalValue, sum, line, false, false, paperWidth)
+                var startRod = new Rod(shift, originalValue, sum, line, false, false, paperWidth, rodDefaultColor)
+                var endRod = new Rod(shift + (factor - 1)*value, originalValue, sum, line, false, false, paperWidth, rodDefaultColor)
                 var coma = new PointText()
                 coma = new PointText(new Point(xShift + paperWidth/4 + 2*u, textPosition + rodMarginTop + line*rodHeight));
                 coma.justification = 'center';
