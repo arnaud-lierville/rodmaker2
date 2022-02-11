@@ -3,11 +3,6 @@
 TODO : heigthRod en fonction de la hauteur de la view
 
 => css & js & co ##################################################
-favicon
-css verif
-color
-strokewidth
-hard js file
 
 => utils ##################################################
 dl eps/pdf

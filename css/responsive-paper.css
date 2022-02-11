@@ -24,3 +24,8 @@ label {
     margin-top: 6px;
     margin-right: 20px;
 }
+
+.form-check-input:checked {
+    background-color: #5bc0de;
+    border-color: #5bc0de;
+}

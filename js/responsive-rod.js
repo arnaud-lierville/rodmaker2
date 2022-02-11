@@ -16,14 +16,14 @@ var latexToImg = function(formula) {
 
 /* shorcut examples */
 formulaList = {
-    'a': '3*4? = 12 = ?4*3',
-    'z': '42=40+2',
-    'e': '42?=40+2',
-    'r': '42=40+2?',
-    't': '12=3*4',
-    'y': '12?=3*4',
-    'u': '12=3?*4',
-    'i': '12=3*4?',
+    'a': '42=40+2',
+    'z': '42?=40+2',
+    'e': '42=40+2?',
+    'r': '12=3*4',
+    't': '12?=3*4',
+    'y': '12=3?*4',
+    'u': '12=3*4?',
+    'i': '3*4? = 12 = ?4*3',
     'o': '14 = 3*4 + 2?',
     'p': '2*5 = 10 = 5*2',
     'q': '4?=1.5 + 2,5',
@@ -36,13 +36,12 @@ formulaList = {
     'k': '3?*1/2',
     'l': '1=1/2+1/3+1/6',
     'm': '?5*2=10=3.3+6,7=7+?3=5*2?',
-    'n': '15=3?*5',
-    'w': '3*4? = 12 = ?4*3'
+    'n': '15=3?*5'
 }
 
 function onKeyDown(event) {
     var shortKey = event.key
-    if ('azertyuiopqsdfghjklmw'.indexOf(shortKey) > -1 && formulaInput != document.activeElement) {
+    if ('azertyuiopqsdfghjklm'.indexOf(shortKey) > -1 && formulaInput != document.activeElement) {
         formulaInput.value = formulaList[shortKey]
         drawApp(paper.view.bounds.width, formulaList[shortKey])
     }
@@ -67,7 +66,7 @@ var formulaInput = document.createElement('input');
 formulaInput.setAttribute('type', 'text');
 formulaInput.className = 'form-input'
 formulaInput.size = 37
-formulaInput.value = formulaList['g']
+formulaInput.value = formulaList['i']
 divFormInline.appendChild(formulaInput)
 
 var divFormSwitch = document.createElement('div')
