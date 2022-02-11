@@ -194,7 +194,6 @@ function drawApp(paperWidth, formula) {
                 }
             }  else {
                 if(sum != 0) {
-                    console.log('NOT')
                     new Rod(shift, modelLines[i][j], modelMax, realLileNumber, false, true, paperWidth, rodDefaultColor)
                     shift += sum
                     changeLine = true
