@@ -1,5 +1,12 @@
+vérif examples et md (attention sous liste)
+?x => grouBycolor ?12*1/5 AJOUTER EXEMPLE
+Sticky navbar
+github
+mise en ligne
+
+
 => feat ##################################################
-TODO : heigthRod en fonction de la hauteur de la view
+? TODO : heigthRod en fonction de la hauteur de la view
 
 => css & js & co ##################################################
 
@@ -17,3 +24,4 @@ dl eps/pdf
 
 => Notes ##################################################
 https://github.com/paperjs/paper.js/issues/1832
+https://coderwall.com/p/vmkk6a/how-to-make-the-canvas-not-look-like-crap-on-retina

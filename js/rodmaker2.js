@@ -11,9 +11,59 @@ var deepEval = function(value) { try { return math.evaluate(value) } catch (e) {
 
 var latexToImg = function(formula) {
     var wrapper = MathJax.tex2svg(formula, { em: 10, ex: 5, display: true })
-    return wrapper.querySelector('svg');
+    return wrapper.querySelector('svg')
 }
 
+function getTimeStamp() {
+    var date = new Date();
+    return date.getDate() + '-' + (date.getMonth()+1) + '-' + date.getFullYear()+ '_' + date.getHours()+ 'h' + date.getMinutes()+ 'm' + date.getSeconds() + 's'
+}
+
+function getBlobURL(content, type) { return URL.createObjectURL(new Blob([content], {type: type })) }
+
+function exportModel(paperWidth) {
+
+    var svg = paper.project.exportSVG({ 
+        asString: true,
+        bounds: new Rectangle(new Point(paperWidth/4 - rodHeight, rodMarginTop - 1.5*rodHeight), new Size(paperWidth/2 + 2*rodHeight, (nbModelLine + 3)*rodHeight))
+    })
+
+    var match = svg.match(/height=\"(\d+)/m);
+    var height = match && match[1] ? parseInt(match[1],10) : 200;
+    var match = svg.match(/width=\"(\d+)/m);
+    var width = match && match[1] ? parseInt(match[1],10) : 200;
+    
+    if (!svg.match(/xmlns=\"/mi)){ svg = svg.replace ('<svg ','<svg xmlns="http://www.w3.org/2000/svg" ')  }
+    
+    // create a canvas element to pass through
+    var canvas = document.createElement("canvas")
+    canvas.width = 2*width
+    canvas.height = 2*height
+    canvas.style.width = width
+    canvas.style.height = height
+
+    var context = canvas.getContext("2d")
+    context.scale(2,2)
+    context.save();
+    context.fillStyle = rodDefaultColor;   
+    context.fillRect(0, 0, canvas.width, canvas.height)
+    context.strokeRect(0, 0, canvas.width, canvas.height)
+    context.restore();
+
+    var url = getBlobURL(svg, 'image/svg+xml;charset=utf-8')
+    var imgage = new Image;
+    imgage.onload = function() {
+        context.drawImage(this, 0, 0)
+		var link = document.createElement("a")
+		link.download = 'Modèle_' + getTimeStamp() + '.png'
+		link.href = canvas.toDataURL("image/png")//.replace("image/png", "image/octet-stream")
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		delete link;
+    }
+    imgage.src = url;
+}
 /* shorcut examples */
 formulaList = {
     'a': '42=40+2',
@@ -36,7 +86,7 @@ formulaList = {
     'k': '3?*1/2',
     'l': '1=1/2+1/3+1/6',
     'm': '?5*2=10=3.3+6,7=7+?3=5*2?',
-    'n': '15=3?*5'
+    'w': '15=3?*5'
 }
 
 function onKeyDown(event) {
@@ -48,6 +98,7 @@ function onKeyDown(event) {
 }
 
 /* scene */
+var nbModelLine = 0
 var rodHeight = 40
 var textPosition = 27*rodHeight/40
 var fracPosition = 20*textPosition/27
@@ -106,6 +157,11 @@ checkInput.addEventListener('change', function() {
 function keyup(event) { window.dispatchEvent(new Event('keyup')); }
 function change(event) { window.dispatchEvent(new Event('change')); }
 
+var download = document.getElementById('download')
+download.onclick = function() { exportModel(paper.view.bounds.width, rodMarginTop) }
+download.onmouseenter = function() { download.style.setProperty('cursor', 'pointer') }
+download.onMouseLeave = function() { download.style.setProperty('cursor', null) }
+
 /* main function */
 function drawApp(paperWidth, formula) {
 
@@ -117,7 +173,7 @@ function drawApp(paperWidth, formula) {
     var sumList = []
     var modelLines = []
     var modelMax = 0
-    var nbModelLine = lines.length
+    nbModelLine = lines.length
 
     /* modelMax computing */
     for(var index in lines) {
@@ -204,12 +260,14 @@ function drawApp(paperWidth, formula) {
     }
 }
 /* ########### Rod ###############
-@shift : somme jusqu'au départ
-@value : valeur de la barre
-@sum : valeur totale de la ligne
-@line : numéro de la ligne
-@isValueHidden : true => la valeur de la barre est cachée
-@isSwitchON : true => value / ?
+@param {number} shift - somme jusqu'au départ
+@param {string} originalValue - valeur de la barre
+@param {number} sum - valeur totale de la ligne
+@param {number} line - numéro de la ligne
+@param {boolean} isValueHidden - true => la valeur de la barre est cachée
+@param {boolean} isSwitchON - true => value / ?
+@param {number} paperWidth - global paperWidth
+@param {number} color - color in hexadecimal
 */
 var Rod = Base.extend({
 
@@ -284,15 +342,16 @@ var Rod = Base.extend({
 }})
 
 /* ########### Brace ###############
-@shift : somme jusqu'au départ
-@value : valeur itérée
-@factor : nombre de fois la value
-@sum : valeur totale de la ligne
-@line : numéro de la ligne
-@isValueHidden : le factor est caché
-@isSwitchON : factor / ?
+@param {number} shift - somme jusqu'au départ
+@param {string} originalValue - valeur itérée
+@param {string} originalFactor - nombre de fois la value
+@param {number} sum - valeur totale de la ligne
+@param {number} line - numéro de la ligne
+@param {boolean} isValueHidden - true => la valeur de la barre est cachée
+@param {boolean} isSwitchON - true => factor / ?
+@param {string} type - top or bottom or none
+@param {number} paperWidth - global paperWidth
 */
-
 var Brace = Base.extend({
 
     initialize: function(shift, originalValue, originalFactor, sum, line, isValueHidden, isSwitchON, type, paperWidth) {
@@ -365,14 +424,15 @@ var Brace = Base.extend({
 
 /*  ########### MultiPartition ###############
 (On connait le nombre de part, on cherche la taille de chaque part)
-@shift : somme jusqu'au départ
-@value : valeur itérée
-@factor : nombre de fois la value => CONNU
-@sum : valeur totale de la ligne
-@line : numéro de la ligne
-@isValueHidden : valeur / ?
+@param {number} shift - somme jusqu'au départ
+@param {string} originalValue - valeur itérée
+@param {string} originalFactor - nombre de fois la value => CONNU
+@param {number} sum - valeur totale de la ligne
+@param {number} line - numéro de la ligne
+@param {boolean} isValueHidden - true => la valeur de la barre est cachée
+@param {number} paperWidth - global paperWidth
+@param {boolean} groupByColor - true or false
 */
-
 var MultiPartition = Base.extend({
 
     initialize: function(shift, originalValue, originalFactor, sum, line, isValueHidden, paperWidth, groupByColor) {
@@ -403,13 +463,14 @@ var MultiPartition = Base.extend({
 
 /* ########### MultiQuotition ###############
 (on connait la taille des part, on cherche le nombre de parts)
-@shift : somme jusqu'au départ
-@value : valeur itérée => CONNU
-@factor : nombre de fois la value 
-@sum : valeur totale de la ligne
-@line : numéro de la ligne
+@param {number} shift - somme jusqu'au départ
+@param {string} originalValue - valeur itérée => CONNU
+@param {string} originalFactor - nombre de fois la value
+@param {number} sum - valeur totale de la ligne
+@param {number} line - numéro de la ligne
+@param {string} type - top or bottom or none
+@param {number} paperWidth - global paperWidth
 */
-
 var MultiQuotition = Base.extend({
 
     initialize: function(shift, originalValue, originalFactor, sum, line, type, paperWidth) {
@@ -426,8 +487,18 @@ var MultiQuotition = Base.extend({
 
             this.multiPartition = new Group()
 
+            var nbBlockColor = 0
+            var shortFactor = 0
+
+            if (value < 1) {
+                nbBlockColor = parseInt(factor*value)
+                shortFactor = parseInt(parseInt(factor*value)/value)
+            }
+
             for(var rodNumber = 0; rodNumber < factor; rodNumber++) {
-                var rod = new Rod(shift + rodNumber*value, originalValue, sum, line, false, factor < 3, paperWidth, rodDefaultColor)
+                var color = rodDefaultColor
+                if (nbBlockColor != 0 && rodNumber < shortFactor) { color = greenColorList[Math.floor(parseInt((rodNumber*nbBlockColor)/shortFactor))%2] }
+                var rod = new Rod(shift + rodNumber*value, originalValue, sum, line, false, factor < 3, paperWidth, color)
                 this.multiPartition.addChild(rod)
             }
 

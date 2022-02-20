@@ -29,3 +29,11 @@ label {
     background-color: #5bc0de;
     border-color: #5bc0de;
 }
+
+.dl-link {
+    position: fixed;
+    right: 0;
+    top: 15%;
+    width: 8em;
+    margin-top: -2.5em;
+  }
