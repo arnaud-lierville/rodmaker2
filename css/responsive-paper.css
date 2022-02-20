@@ -16,24 +16,11 @@ canvas[resize] {
     height: 2em;
 }
 
-label {
-    margin: 7px;
-}
-
-.form-input {
-    margin-top: 6px;
-    margin-right: 20px;
-}
-
 .form-check-input:checked {
-    background-color: #5bc0de;
-    border-color: #5bc0de;
+    background-color: #86B8FF;
+    border-color: #86B8FF;
 }
 
-.dl-link {
-    position: fixed;
-    right: 0;
-    top: 15%;
-    width: 8em;
-    margin-top: -2.5em;
-  }
+.navbar-custom {
+    height: 70%;
+}

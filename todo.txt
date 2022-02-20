@@ -1,9 +1,7 @@
-vérif examples et md (attention sous liste)
-?x => grouBycolor ?12*1/5 AJOUTER EXEMPLE
-Sticky navbar
 github
 mise en ligne
 
+valeur / ? / RIEN
 
 => feat ##################################################
 ? TODO : heigthRod en fonction de la hauteur de la view

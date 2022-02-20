@@ -62,7 +62,8 @@ function exportModel(paperWidth) {
 		document.body.removeChild(link);
 		delete link;
     }
-    imgage.src = url;
+    imgage.src = url
+    bsOffcanvas.hide()
 }
 /* shorcut examples */
 formulaList = {
@@ -79,7 +80,7 @@ formulaList = {
     'q': '4?=1.5 + 2,5',
     's': '1?=1/2+1/3+1/6',
     'd': '6=3+4',
-    'f': '?5*5/2=10=3.3+6,7=7+?3=5*2/3?',
+    'f': '?11*1/3',
     'g': '2*3=20*1/5=6/5=1/5+1/5+1/5+1/5+1/5=7*1/3',
     'h': '1+23/10=1+23*1/10=1+1+1+3/10=1+2+3/10=3+0,3=3,3',
     'j': '?5*5/2=10=3.3+6,7=7+?3=5*2/3?',
@@ -91,10 +92,13 @@ formulaList = {
 
 function onKeyDown(event) {
     var shortKey = event.key
-    if ('azertyuiopqsdfghjklm'.indexOf(shortKey) > -1 && formulaInput != document.activeElement) {
+    if ('azertyuiopqsdfghjklmw'.indexOf(shortKey) > -1 && formulaInput != document.activeElement) {
         formulaInput.value = formulaList[shortKey]
         drawApp(paper.view.bounds.width, formulaList[shortKey])
+        bsOffcanvas.hide()
     }
+    if(shortKey == 'enter') { bsOffcanvas.hide() }
+    if (shortKey == 'x' && formulaInput != document.activeElement) { exportModel(paper.view.bounds.width, rodMarginTop) }
 }
 
 /* scene */
@@ -102,50 +106,63 @@ var nbModelLine = 0
 var rodHeight = 40
 var textPosition = 27*rodHeight/40
 var fracPosition = 20*textPosition/27
-var rodMarginTop = 100
+var rodMarginTop = 150
 var fontSize = rodHeight/2
 var rodDefaultColor = '#FFFFFF'
 var rodDefalutStrokeColor = '#6b6b6b'
 var greenColorList = ['#5cb85c', '#91cf91']
 var braceColor = '#D9534F'
 
-/* html forms with formula input */
-var divFormInline = document.createElement('div')
-divFormInline.className = 'form-inline'
 
-var formulaInput = document.createElement('input');
-formulaInput.setAttribute('type', 'text');
-formulaInput.className = 'form-input'
-formulaInput.size = 37
-formulaInput.value = formulaList['i']
-divFormInline.appendChild(formulaInput)
-
-var divFormSwitch = document.createElement('div')
-divFormSwitch.className = 'form-switch form-check-inline'
-
-var checkInput = document.createElement('input')
-checkInput.setAttribute('type', 'checkbox')
-checkInput.className = 'form-check-input'
-
-var labelCheckbox = document.createElement('label')
-labelCheckbox.className = 'form-check-label'
-labelCheckbox.innerText = 'Cacher / Montrer'
-
-divFormSwitch.append(checkInput, labelCheckbox)
+var html =  '<nav class="navbar navbar-light bg-light fixed-top">' +
+            '<div class="container-fluid">' +
+            '<a class="navbar-brand" href="#">Modèle en barres</a>' +
+            '<button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">' +
+            '<span class="navbar-toggler-icon"></span>' +
+            '</button>' +
+            '<div class="offcanvas offcanvas-top navbar-custom" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">' +
+            '<div class="offcanvas-header">' +
+            '<h5 class="offcanvas-title" id="offcanvasNavbarLabel"></h5>' +
+            '<button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>' +
+            '</div>' +
+            '<div class="offcanvas-body">' +
+            '<ul class="navbar-nav justify-content-end flex-grow-1 pe-3">' +
+            '<form class="d-flex" style="margin-bottom: 50px;">' +
+            '<input class="form-control me-2" type="text" id="formulaInput">' +
+            '<div class="form-switch form-check-inline">' +
+            '<input type="checkbox" class="form-check-input" id="checkInput">' +
+            '</div>' +
+            '</form>' +
+            '<li>' +
+            '<div class="text-center">' +
+            '<button type="button" class="btn btn-outline-success" id="download" data-toggle="tooltip" data-placement="bottom" title="Raccouci => touche \'x\'">' +
+            '<i class="fas fa-file-arrow-down pr-2" aria-hidden="true"></i>&nbsp; Télécharger l\'image' +
+            '</button>' +
+            '</div>' +
+            '</li>' +
+            '</ul>' +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+            '</nav>'
 
 var div = document.createElement('div')
-div.className = 'd-flex justify-content-center'
-div.style = 'margin-top: 30px'
-
-div.append(divFormInline, divFormSwitch)
-
+div.innerHTML = html
 document.body.insertBefore(div, document.body.firstChild);
 
+var formulaInput = document.getElementById('formulaInput')
+var checkInput = document.getElementById('checkInput')
+var download = document.getElementById('download')
+
+var myOffcanvas = document.getElementById('offcanvasNavbar')
+var bsOffcanvas = new bootstrap.Offcanvas(myOffcanvas)
+
+formulaInput.value = formulaList['i']
+
 formulaInput.addEventListener('keyup', function(event) {
-    if(event.key != 'Shift') {
-        drawApp(paper.view.bounds.width, formulaInput.value)
-    }
-})  
+    if(event.key != 'Shift') { drawApp(paper.view.bounds.width, formulaInput.value) }
+})
+
 checkInput.addEventListener('change', function() {
     if (formulaInput.type === "password") {
         formulaInput.type = "text";
@@ -157,7 +174,6 @@ checkInput.addEventListener('change', function() {
 function keyup(event) { window.dispatchEvent(new Event('keyup')); }
 function change(event) { window.dispatchEvent(new Event('change')); }
 
-var download = document.getElementById('download')
 download.onclick = function() { exportModel(paper.view.bounds.width, rodMarginTop) }
 download.onmouseenter = function() { download.style.setProperty('cursor', 'pointer') }
 download.onMouseLeave = function() { download.style.setProperty('cursor', null) }
