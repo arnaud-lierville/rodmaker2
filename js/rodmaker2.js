@@ -127,12 +127,12 @@ var html =  '<nav class="navbar navbar-light bg-light fixed-top">' +
             '</div>' +
             '<div class="offcanvas-body">' +
             '<ul class="navbar-nav justify-content-end flex-grow-1 pe-3">' +
-            '<form class="d-flex" style="margin-bottom: 50px;">' +
+            '<div class="d-flex" style="margin-bottom: 50px;">' +
             '<input class="form-control me-2" type="text" id="formulaInput">' +
             '<div class="form-switch form-check-inline">' +
             '<input type="checkbox" class="form-check-input" id="checkInput">' +
             '</div>' +
-            '</form>' +
+            '</div>' +
             '<li>' +
             '<div class="text-center">' +
             '<button type="button" class="btn btn-outline-success" id="download" data-toggle="tooltip" data-placement="bottom" title="Raccouci => touche \'x\'">' +
