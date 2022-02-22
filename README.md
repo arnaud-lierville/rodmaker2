@@ -4,7 +4,7 @@ Fonctionnalités :
 1. NEW-INTERACTIVE : interactif, on peut cacher/montrer la valeur d'une barre en cliquant dessus !
 2. NEW-SMART : détection par des blocks en couleur pour "des n-ièmes il en faut n pour faire l'unité"
 3. NEW-NICE : accolade dans le cas d'une division-quotition
-4. NEW-COOL : téléchargement des modèles créés au format image (png) via menu ou raccourci 'x'
+4. NEW-COOL : téléchargement des modèles créés au format image (png) via menu avec les '?' (raccourci 'x') sans les '?' (raccourci 'c')
 5. Exemple de saisies de formules : (tapez sur a, z, e, r, t, y, ... *EN DEHORS* du champ de saisie)
 * a) 3*4? = 12 = ?4*3
 * z) 42=40+2

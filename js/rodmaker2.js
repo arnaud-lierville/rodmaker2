@@ -1,6 +1,6 @@
 // when view is resized...
 paper.view.onResize = function() {
-    drawApp(paper.view.bounds.width, formulaInput.value)
+    drawApp(paper.view.bounds.width, formulaInput.value, true)
 };
 
 /* utils */
@@ -94,11 +94,16 @@ function onKeyDown(event) {
     var shortKey = event.key
     if ('azertyuiopqsdfghjklmw'.indexOf(shortKey) > -1 && formulaInput != document.activeElement) {
         formulaInput.value = formulaList[shortKey]
-        drawApp(paper.view.bounds.width, formulaList[shortKey])
+        drawApp(paper.view.bounds.width, formulaList[shortKey], true)
         bsOffcanvas.hide()
     }
     if(shortKey == 'enter') { bsOffcanvas.hide() }
     if (shortKey == 'x' && formulaInput != document.activeElement) { exportModel(paper.view.bounds.width, rodMarginTop) }
+    if (shortKey == 'c' && formulaInput != document.activeElement) { 
+        drawApp(paper.view.bounds.width, formulaInput.value, false)
+        exportModel(paper.view.bounds.width, rodMarginTop)
+        drawApp(paper.view.bounds.width, formulaInput.value, true)
+    }
 }
 
 /* scene */
@@ -135,8 +140,11 @@ var html =  '<nav class="navbar navbar-light bg-light fixed-top">' +
             '</div>' +
             '<li>' +
             '<div class="text-center">' +
-            '<button type="button" class="btn btn-outline-success" id="download" data-toggle="tooltip" data-placement="bottom" title="Raccouci => touche \'x\'">' +
-            '<i class="fas fa-file-arrow-down pr-2" aria-hidden="true"></i>&nbsp; Télécharger l\'image' +
+            '<button type="button" class="btn btn-outline-success btn-custom" id="download" data-toggle="tooltip" data-placement="bottom" title="Raccourci => touche \'x\'">' +
+            '<i class="fas fa-file-arrow-down pr-2" aria-hidden="true"></i>&nbsp; Télécharger l\'image avec les ?' +
+            '</button>' +
+            '<button type="button" class="btn btn-outline-danger btn-custom" id="empty-download" data-toggle="tooltip" data-placement="bottom" title="Raccourci => touche \'c\'">' +
+            '<i class="fas fa-file-arrow-down pr-2" aria-hidden="true"></i>&nbsp; Télécharger l\'image sans les ?' +
             '</button>' +
             '</div>' +
             '</li>' +
@@ -153,6 +161,7 @@ document.body.insertBefore(div, document.body.firstChild);
 var formulaInput = document.getElementById('formulaInput')
 var checkInput = document.getElementById('checkInput')
 var download = document.getElementById('download')
+var emptyDownload = document.getElementById('empty-download')
 
 var myOffcanvas = document.getElementById('offcanvasNavbar')
 var bsOffcanvas = new bootstrap.Offcanvas(myOffcanvas)
@@ -160,7 +169,7 @@ var bsOffcanvas = new bootstrap.Offcanvas(myOffcanvas)
 formulaInput.value = formulaList['i']
 
 formulaInput.addEventListener('keyup', function(event) {
-    if(event.key != 'Shift') { drawApp(paper.view.bounds.width, formulaInput.value) }
+    if(event.key != 'Shift') { drawApp(paper.view.bounds.width, formulaInput.value, true) }
 })
 
 checkInput.addEventListener('change', function() {
@@ -178,8 +187,16 @@ download.onclick = function() { exportModel(paper.view.bounds.width, rodMarginTo
 download.onmouseenter = function() { download.style.setProperty('cursor', 'pointer') }
 download.onMouseLeave = function() { download.style.setProperty('cursor', null) }
 
+emptyDownload.onclick = function() { 
+    drawApp(paper.view.bounds.width, formulaInput.value, false)
+    exportModel(paper.view.bounds.width, rodMarginTop)
+    drawApp(paper.view.bounds.width, formulaInput.value, true)
+}
+emptyDownload.onmouseenter = function() { emptyDownload.style.setProperty('cursor', 'pointer') }
+emptyDownload.onMouseLeave = function() { emptyDownload.style.setProperty('cursor', null) }
+
 /* main function */
-function drawApp(paperWidth, formula) {
+function drawApp(paperWidth, formula, withMark) {
 
     project.clear()
 
@@ -237,13 +254,13 @@ function drawApp(paperWidth, formula) {
             var value = deepEval(productSplited[1])
             if(modelLinesIsValueHidden[i][j] == '*?') {
                 if(factor != 0 && value != 0) {
-                    new MultiPartition(shift, productSplited[1], productSplited[0], modelMax, realLileNumber, true, paperWidth, false)
+                    new MultiPartition(shift, productSplited[1], productSplited[0], modelMax, realLileNumber, true, paperWidth, false, withMark)
                     shift += factor*value
                     changeLine = true
                 }
             } else if(modelLinesIsValueHidden[i][j] == '*' || modelLinesIsValueHidden[i][j] == '?*?') {
                 if(factor != 0 && value != 0) {
-                    new MultiPartition(shift, productSplited[1], productSplited[0], modelMax, realLileNumber, false, paperWidth, true)
+                    new MultiPartition(shift, productSplited[1], productSplited[0], modelMax, realLileNumber, false, paperWidth, true, withMark)
                     shift += factor*value
                     changeLine = true
                 }
@@ -254,19 +271,19 @@ function drawApp(paperWidth, formula) {
                 if (isFirstLine) { type = 'top' }
                 if (isLastLine) { type = 'bottom' }
                 if(factor != 0 && value != 0) {
-                    new MultiQuotition(shift, productSplited[1], productSplited[0], modelMax, realLileNumber, type, paperWidth)
+                    new MultiQuotition(shift, productSplited[1], productSplited[0], modelMax, realLileNumber, type, paperWidth, withMark)
                     shift += factor*value
                     changeLine = true
                 }
             } else if(modelLinesIsValueHidden[i][j] == '?') {
                 if(sum != 0) {
-                    new Rod(shift, modelLines[i][j], modelMax, realLileNumber, true, true, paperWidth, rodDefaultColor)
+                    new Rod(shift, modelLines[i][j], modelMax, realLileNumber, true, true, paperWidth, rodDefaultColor, withMark)
                     shift += sum
                     changeLine = true
                 }
             }  else {
                 if(sum != 0) {
-                    new Rod(shift, modelLines[i][j], modelMax, realLileNumber, false, true, paperWidth, rodDefaultColor)
+                    new Rod(shift, modelLines[i][j], modelMax, realLileNumber, false, true, paperWidth, rodDefaultColor, withMark)
                     shift += sum
                     changeLine = true
                 }
@@ -284,10 +301,11 @@ function drawApp(paperWidth, formula) {
 @param {boolean} isSwitchON - true => value / ?
 @param {number} paperWidth - global paperWidth
 @param {number} color - color in hexadecimal
+@param {boolean} withMark - if false turn '?' in white
 */
 var Rod = Base.extend({
 
-    initialize: function(shift, originalValue, sum, line, isValueHidden, isSwitchON, paperWidth, color) {
+    initialize: function(shift, originalValue, sum, line, isValueHidden, isSwitchON, paperWidth, color, withMark) {
 
         var value = deepEval(originalValue)
 
@@ -307,7 +325,10 @@ var Rod = Base.extend({
             this.text.fillColor = 'black';
             this.text.fontSize = fontSize
             this.text.content = numberFormatting(value)
-            if (isValueHidden) { this.text.content = '?' }
+            if (isValueHidden) { 
+                this.text.content = '?'
+                if(!withMark) { this.text.fillColor = 'white' }
+            }
 
             this.svgGroup = new Group()
             var isValueFraction = originalValue.toString().indexOf('/') > -1
@@ -367,10 +388,11 @@ var Rod = Base.extend({
 @param {boolean} isSwitchON - true => factor / ?
 @param {string} type - top or bottom or none
 @param {number} paperWidth - global paperWidth
+@param {boolean} withMark - if false turn '?' in white
 */
 var Brace = Base.extend({
 
-    initialize: function(shift, originalValue, originalFactor, sum, line, isValueHidden, isSwitchON, type, paperWidth) {
+    initialize: function(shift, originalValue, originalFactor, sum, line, isValueHidden, isSwitchON, type, paperWidth, withMark) {
 
         var value = deepEval(originalValue)
         var factor = deepEval(originalFactor)
@@ -401,7 +423,10 @@ var Brace = Base.extend({
             this.text.fillColor = braceColor
             this.text.fontSize = fontSize
             this.text.content = numberFormatting(factor) + ' x';
-            if (isValueHidden) { this.text.content = '? x' }
+            if (isValueHidden) { 
+                this.text.content = '? x'
+                if(!withMark) { this.text.fillColor = 'white' }
+             }
 
             this.brace.addChild(this.path)
             this.brace.addChild(this.text)
@@ -448,10 +473,11 @@ var Brace = Base.extend({
 @param {boolean} isValueHidden - true => la valeur de la barre est cachée
 @param {number} paperWidth - global paperWidth
 @param {boolean} groupByColor - true or false
+@param {boolean} withMark - if false turn '?' in white
 */
 var MultiPartition = Base.extend({
 
-    initialize: function(shift, originalValue, originalFactor, sum, line, isValueHidden, paperWidth, groupByColor) {
+    initialize: function(shift, originalValue, originalFactor, sum, line, isValueHidden, paperWidth, groupByColor, withMark) {
 
         var value = deepEval(originalValue)
         var factor = deepEval(originalFactor)
@@ -468,7 +494,7 @@ var MultiPartition = Base.extend({
             for(var rodNumber = 0; rodNumber < factor; rodNumber++) {
                 var color = rodDefaultColor
                 if (nbBlockColor != 0 && rodNumber < shortFactor) { color = greenColorList[Math.floor(parseInt((rodNumber*nbBlockColor)/shortFactor))%2] }
-                var rod = new Rod(shift + rodNumber*value, originalValue, sum, line, isValueHidden, true, paperWidth, color)
+                var rod = new Rod(shift + rodNumber*value, originalValue, sum, line, isValueHidden, true, paperWidth, color, withMark)
                 this.multiPartition.addChild(rod)
             }
 
@@ -486,10 +512,11 @@ var MultiPartition = Base.extend({
 @param {number} line - numéro de la ligne
 @param {string} type - top or bottom or none
 @param {number} paperWidth - global paperWidth
+@param {boolean} withMark - if false turn '?' in white
 */
 var MultiQuotition = Base.extend({
 
-    initialize: function(shift, originalValue, originalFactor, sum, line, type, paperWidth) {
+    initialize: function(shift, originalValue, originalFactor, sum, line, type, paperWidth, withMark) {
 
         var value = deepEval(originalValue)
         var factor = deepEval(originalFactor)
@@ -514,15 +541,15 @@ var MultiQuotition = Base.extend({
             for(var rodNumber = 0; rodNumber < factor; rodNumber++) {
                 var color = rodDefaultColor
                 if (nbBlockColor != 0 && rodNumber < shortFactor) { color = greenColorList[Math.floor(parseInt((rodNumber*nbBlockColor)/shortFactor))%2] }
-                var rod = new Rod(shift + rodNumber*value, originalValue, sum, line, false, factor < 3, paperWidth, color)
+                var rod = new Rod(shift + rodNumber*value, originalValue, sum, line, false, factor < 3, paperWidth, color, withMark)
                 this.multiPartition.addChild(rod)
             }
 
             this.multiPartition.visible = false
 
             if(factor > 2) {
-                var startRod = new Rod(shift, originalValue, sum, line, false, false, paperWidth, rodDefaultColor)
-                var endRod = new Rod(shift + (factor - 1)*value, originalValue, sum, line, false, false, paperWidth, rodDefaultColor)
+                var startRod = new Rod(shift, originalValue, sum, line, false, false, paperWidth, rodDefaultColor, withMark)
+                var endRod = new Rod(shift + (factor - 1)*value, originalValue, sum, line, false, false, paperWidth, rodDefaultColor, withMark)
                 var coma = new PointText()
                 coma = new PointText(new Point(xShift + paperWidth/4 + 2*u, textPosition + rodMarginTop + line*rodHeight));
                 coma.justification = 'center';
@@ -531,7 +558,7 @@ var MultiQuotition = Base.extend({
                 coma.content = '...';
 
                 if(type != 'none') {
-                    this.brace = new Brace(shift, originalValue, factor, sum, line + 1, true, true, type, paperWidth)
+                    this.brace = new Brace(shift, originalValue, factor, sum, line + 1, true, true, type, paperWidth, withMark)
                     this.multiQuotition.addChild(startRod)
                     this.multiQuotition.addChild(endRod)
                     this.multiQuotition.addChild(coma)

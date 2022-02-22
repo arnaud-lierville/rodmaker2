@@ -24,3 +24,7 @@ canvas[resize] {
 .navbar-custom {
     height: 70%;
 }
+
+.btn-custom {
+    margin: 3%;
+}
