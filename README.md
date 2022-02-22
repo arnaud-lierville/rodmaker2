@@ -1,11 +1,11 @@
-# Rodmaker2 : nouvelle version du créateur de modèle en barres en ligne !
+# Rodmaker2 : nouvelle version du créateur de modèles en barres en ligne !
 
 Fonctionnalités :
 1. NEW-INTERACTIVE : interactif, on peut cacher/montrer la valeur d'une barre en cliquant dessus !
-2. NEW-SMART : détection par des blocks en couleur pour "des n-ièmes il en faut n pour faire l'unité"
+2. NEW-SMART : détection par des blocs en couleur pour "des n-ièmes il en faut n pour faire l'unité"
 3. NEW-NICE : accolade dans le cas d'une division-quotition
 4. NEW-COOL : téléchargement des modèles créés au format image (png) via menu avec les '?' (raccourci 'x') sans les '?' (raccourci 'c')
-5. Exemple de saisies de formules : (tapez sur a, z, e, r, t, y, ... *EN DEHORS* du champ de saisie)
+5. Exemple de saisie de formules : (tapez sur a, z, e, r, t, y, ... *EN DEHORS* du champ de saisie)
 * a) 3*4? = 12 = ?4*3
 * z) 42=40+2
 * e)42?=40+2
@@ -29,5 +29,5 @@ Fonctionnalités :
 * n) 15=3?*5
 * w) 3*4? = 12 = ?4*3
 5. Utilisation :
-    a) On s'en sert en classe avec vidéoprojecteur
-    b) On prépare ses documents en copiant/collant les modèles créés
+* a) On s'en sert en classe avec vidéoprojecteur
+* b) On prépare ses documents en copiant/collant les modèles créés
